@@ -1,5 +1,7 @@
 import java.io.*;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Map {
@@ -104,6 +106,7 @@ public class Map {
         int numPositiveWords = 0;
         int numNegativeWords = 0;
         double sentimentScore = 0.0;
+        Pattern pattern = Pattern.compile("([a-zA-Z]+\\-*)+");
 
         File outputFile = new File("./data/log.txt");
         if (outputFile.exists())
@@ -116,22 +119,34 @@ public class Map {
             BufferedReader br = new BufferedReader(new FileReader(filename));
             String thisline = null;
             while((thisline = br.readLine()) != null) {
-                for (String originalWord : thisline.split("\\s*\\b\\s*")) {
-                    String word = originalWord.toLowerCase();
-                    if (word.isEmpty()) {
-                        continue;
-                    }
-
-                    // TODO Count "positive" words
-                    if (positiveWords.contains(word)) {
+                thisline.replace("--", " ");
+                Matcher matcher = pattern.matcher(thisline);
+                while(matcher.find()){
+                    if (positiveWords.contains(matcher.group().toLowerCase())) {
                         numPositiveWords++;
                     }
-
-                    // TODO Count "bad" words
-                    if (negativeWords.contains(word)) {
+                    if (negativeWords.contains(matcher.group().toLowerCase())) {
                         numNegativeWords++;
                     }
                 }
+                //for (String originalWord : thisline.split("\\s*\\b\\s*")) {
+//                for (String originalWord: matcher) {
+//                    String word = originalWord.toLowerCase();
+//                    if (word.isEmpty()) {
+//                        continue;
+//                    }
+//
+//                    // TODO Count "positive" words
+//                    if (positiveWords.contains(word)) {
+//                        numPositiveWords++;
+//
+//                    }
+//
+//                    // TODO Count "bad" words
+//                    if (negativeWords.contains(word)) {
+//                        numNegativeWords++;
+//                    }
+//                }
 
             }
             sentimentScore = (double)(numPositiveWords-numNegativeWords)/(numPositiveWords+numNegativeWords);
