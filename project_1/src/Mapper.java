@@ -1,10 +1,15 @@
+
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class Map {
+public class Mapper {
 
     //TODO Set path
     public static String pathPositiveWords = "./data/positive.txt";
@@ -92,7 +97,7 @@ public class Map {
 
 
 
-    public static void main(String[] args) throws FileNotFoundException, IOException {
+    public static void main(String[] args) throws IOException {
         // TODO Get The List of Sentiment words
         List positiveWords = getSentimentWords(pathPositiveWords);
         List negativeWords = getSentimentWords(pathNegativeWords);
@@ -110,79 +115,53 @@ public class Map {
         double sentimentScore = 0.0;
         Pattern pattern = Pattern.compile("([a-zA-Z]+\\-*)+");
 
-        File outputFile = new File("./data/log.txt");
-        if (outputFile.exists())
-            outputFile.delete();
+        File outputDir = new File(pathOutputDir);
+        if (!outputDir.exists()){
+            outputDir.mkdir();
+        }
+        else {
+            File[] files = outputDir.listFiles();
+            for (int i=0; i<files.length; i++){
+                files[i].delete();
+            }
+        }
+
 
         // TODO Traversal Through all files in the Given Input Directory
-        for (String l : list) {
 
-            File filename = new File(l);
-            BufferedReader br = new BufferedReader(new FileReader(filename));
-            String thisline = null;
-            while((thisline = br.readLine()) != null) {
-                thisline.replace("--", " ");
-                Matcher matcher = pattern.matcher(thisline);
-                while(matcher.find()){
-                    String temp = matcher.group();
-                    if (positiveWords.contains(temp.toLowerCase())) {
-                        numPositiveWords++;
-//                        System.out.println(temp.toLowerCase());
-                    }
-
-                    if (negativeWords.contains(temp.toLowerCase())) {
-                        numNegativeWords++;
-//                        System.out.println(temp.toLowerCase());
-
-                    }
-                }
-//                for (String originalWord : thisline.split("\\s*\\b\\s*")) {
-//                for (String originalWord: matcher) {
-//                    String word = originalWord.toLowerCase();
-//                    if (word.isEmpty()) {
-//                        continue;
-//                    }
-//
-//                    // TODO Count "positive" words
-//                    if (positiveWords.contains(word)) {
-//                        numPositiveWords++;
-//
-//                    }
-//
-//                    // TODO Count "bad" words
-//                    if (negativeWords.contains(word)) {
-//                        numNegativeWords++;
-//                    }
-//                }
-
-            }
-            sentimentScore = (double)(numPositiveWords-numNegativeWords)/(numPositiveWords+numNegativeWords);
+        int NUM_OF_THREAD = 5;
+        ExecutorService executor = Executors.newFixedThreadPool(NUM_OF_THREAD);
+        List<Future<?>> futures = new ArrayList<>();
+        int iter = list.size()/NUM_OF_THREAD;
 
 
-            // TODO Write in a file named "log.txt".
-            BufferedWriter out = null;
-            try {
-                out = new BufferedWriter(new OutputStreamWriter(
-                        new FileOutputStream("./data/log.txt", true)));
-                out.write(filename.getParentFile().getName()+"\\"+filename.getName()+"\n");
-                out.write("Postive word: "+numPositiveWords+" negative word: "+numNegativeWords+"\n");
-                out.write("Setiment score: "+sentimentScore+"\n");
-                out.write("\n");
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            // TODO Reset counted numbers of sentiment words
-            numNegativeWords = 0;
-            numPositiveWords = 0;
-
+        for (int i = 0; i<iter; i++) {
+            String l = list.get(i);
+            Callable t1 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
+            futures.add(executor.submit(t1));
         }
+        for (int i = iter; i<iter*2; i++) {
+            String l = list.get(i);
+            Callable t2 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
+            futures.add(executor.submit(t2));
+        }
+        for (int i = 2*iter; i<iter*3; i++) {
+            String l = list.get(i);
+            Callable t3 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
+            futures.add(executor.submit(t3));
+        }
+        for (int i = 3*iter; i<iter*4; i++) {
+            String l = list.get(i);
+            Callable t4 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
+            futures.add(executor.submit(t4));
+        }
+        for (int i = 4*iter; i<list.size(); i++) {
+            String l = list.get(i);
+            Callable t5 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
+            futures.add(executor.submit(t5));
+        }
+        executor.shutdown();
+
 
     }
 }
