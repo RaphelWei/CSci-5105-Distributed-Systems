@@ -21,7 +21,7 @@ public class Sorter {
 
             Runnable simple = new Runnable() {
                 public void run() {
-                    simple(processor);
+                    simple(processor, Integer.parseInt(args[0]));
                 }
             };
 
@@ -31,10 +31,10 @@ public class Sorter {
         }
     }
 
-    public static void simple(CheckDir.Processor processor) {
+    public static void simple(CheckDir.Processor processor, int port) {
         try {
             //Create Thrift server socket
-            TServerTransport serverTransport = new TServerSocket(9090);
+            TServerTransport serverTransport = new TServerSocket(port);
             TTransportFactory factory = new TFramedTransport.Factory();
 
             //Create service request handler

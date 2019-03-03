@@ -1,3 +1,18 @@
+// javac -cp ".:/usr/local/Thrift/*" Server.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Client.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Mapper.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Sorter.java -d .
+
+
+// java -cp ".:/usr/local/Thrift/*" Server
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 9091
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 9092
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 9093
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 9094
+// java -cp ".:/usr/local/Thrift/*" Sorter 9095
+
+// java -cp ".:/usr/local/Thrift/*" Client ./example
+
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportFactory;
 import org.apache.thrift.transport.TTransport;
@@ -29,10 +44,10 @@ public class CheckDirHandler implements CheckDir.Iface
         // private Map<Integer, Double> LoadProb = new HashMap<Integer, Double>();
         // private int machinePort;
         private double loadProb = 0;
-
-        // private int allwords = 0;
-        private double poswords = 0;
-        private double negwords = 0;
+        //
+        // // private int allwords = 0;
+        // private double poswords = 0;
+        // private double negwords = 0;
 
         public void setLoadProb(double p){loadProb=p;loadFlag=true;}
         // private String intermidiatePath;
@@ -54,8 +69,20 @@ public class CheckDirHandler implements CheckDir.Iface
 
           File dir = new File(DirPath);
           File[] directoryListing = dir.listFiles();
-          List<String> statusRecords = new ArrayList<String>();
+          // List<String> statusRecords = new ArrayList<String>();
           // private Map<Integer, String> records = new ConcurrentHashMap<Integer, String>();
+          File outputDirectory = new File(interDir);
+          if (! outputDirectory.exists()){
+              outputDirectory.mkdir();
+          } else{
+            File[] files = outputDirectory.listFiles();
+            System.out.println("__________________________________________");
+            for (int i=0; i<files.length; i++){
+              System.out.println(files[i].getName());
+                files[i].delete();
+            }
+            System.out.println("__________________________________________");
+          }
           Random random = new Random();
           if (directoryListing != null) {
             for (int i = 0; i < directoryListing.length; i++){
@@ -70,28 +97,32 @@ public class CheckDirHandler implements CheckDir.Iface
 
           boolean left = true;
           while(left){
-            Thread.sleep(500);
+            try{
+              Thread.sleep(500);
+            }catch(Exception e){System.out.println(e);}
             int taskLeftCount = 0;
             left = false;
-            for (Map.Entry<Integer, String> entry : statusRecords.entrySet())
+            for (Map.Entry<String, String> entry : statusRecords.entrySet())
             {
+
               if(entry.getValue()=="!") {
-                SubmitTask(entry.getKey().getPath(), portRecords.get(entry.getKey().getPath()));
+                SubmitTask(entry.getKey(), portRecords.get(entry.getKey()));
                 left = true;
                 taskLeftCount=taskLeftCount+1;
-              }
+              } else if(entry.getValue()=="-"){
+                left = true;
+                taskLeftCount=taskLeftCount+1;}
             }
             System.out.println("running tasks:  " + directoryListing.length);
             System.out.println("finished tasks: " + (directoryListing.length-taskLeftCount));
           }
-          SortIntermediateData(interDir);
-
+          SubmitSorting(interDir, 9095);
         }
 
 
         @Override
         public String SubmitTask(String file, int port) throws TException {
-          String ret = "!";
+          String ret = "-";
           Runnable Check = new Runnable() {
                   public void run() {
                     try{
@@ -108,7 +139,7 @@ public class CheckDirHandler implements CheckDir.Iface
 
                         //contact server with pathname
                         // while(ret = client.CheckFile(file)=="!");
-                        statusRecords.put(file, client.CheckFile(file, port));
+                        statusRecords.put(file, client.CheckFile(file));
                         System.out.printf("%s finished\n", file);
                         transport.close();
                         // to write file
@@ -122,15 +153,55 @@ public class CheckDirHandler implements CheckDir.Iface
               return ret;
             }
 
+            @Override
+            public String SubmitSorting(String interDir, int port) throws TException {
+              String ret = "-";
+              Runnable Check = new Runnable() {
+                      public void run() {
+                        try{
+                            // System.out.println(port);
+                            TTransport  transport = new TSocket("localhost", port);
+                            TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+                            CheckDir.Client client = new CheckDir.Client(protocol);
+
+                            //Try to connect
+                            transport.open();
+
+                            //What you need to do.
+                            client.ping();
+
+                            //contact server with pathname
+                            // while(ret = client.CheckFile(file)=="!");
+                            statusRecords.put(interDir, client.SortIntermediateData(interDir));
+                            System.out.printf("%s finished\n", interDir);
+                            transport.close();
+                            // to write file
+                        } catch (TException x){
+                          // x.printStackTrace();
+                          System.out.println(x);
+                        }
+                      }
+                  };
+                  new Thread(Check).start();
+                  System.out.printf("%s started\n", interDir);
+                  return ret;
+                }
+
         @Override
         public String CheckFile(String path) throws TException {
-          if(Math.random()<LoadProb && loadFlag){
+          double poswords = 0;
+          double negwords = 0;
+          System.out.printf("CheckFile");
+          if(Math.random()<loadProb && loadFlag){
             return "!";
           }
-          if(Math.random()<LoadProb){
-            Thread.sleep(3000);
+          System.out.printf("loadprob");
+          if(Math.random()<loadProb){
+            try{
+              Thread.sleep(3000);
+            }catch(Exception e){System.out.println(e);}
           }
-          System.out.println("checkfile!!!");
+          System.out.println("delay");
           // BufferedReader br;
           try{
             BufferedReader br = new BufferedReader(new FileReader(path));
@@ -141,9 +212,9 @@ public class CheckDirHandler implements CheckDir.Iface
             badWords = getSentimentWords(pathNegativeWords);
             Pattern pattern = Pattern.compile("([a-zA-Z]+\\-*)+");
 
-
+            // System.out.println("pattern");
             while ((line = br.readLine()) != null) {
-              System.out.println(line);
+              // System.out.println(line);
               String thisline = line.toString();
               thisline.replace("--", " ");
                 Matcher matcher = pattern.matcher(thisline);
@@ -166,107 +237,111 @@ public class CheckDirHandler implements CheckDir.Iface
         public String WriteString(String fileName, double poswords, double negwords, double sentiment)
           throws TException {
             // String str = "Hello";
-            System.out.println("writing!!!");
+            // System.out.println("writing!!!");
             File outputFile = new File(fileName);
             // fileName = "./intermidiateData/"+outputFile.getName();
-            System.out.println("writing to" + fileName);
-            outputFile = new File(fileName);
+            outputFile = new File(interDir+outputFile.getName());
+            // System.out.println("writing to" + outputFile.getPath());
             File outputDirectory = new File(interDir);
             try{
             if (outputFile.exists())
                 outputFile.delete();
             // File directory = new File(outputDirectory);
-            if (! outputDirectory.exists()){
-                outputDirectory.mkdir();
-            }
+
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile.getPath()));
-            System.out.println(outputFile.getParentFile().getName()+"\\"+outputFile.getName()+"\n");
-            System.out.println("Postive word: "+poswords+" negative word: "+negwords+"\n");
-            System.out.println("Sentiment score: "+sentiment+"\n");
-            System.out.println("\n");
+            // System.out.println(outputFile.getParentFile().getName()+"\\"+outputFile.getName()+"\n");
+            // System.out.println("Postive word: "+poswords+" negative word: "+negwords+"\n");
+            // System.out.println("Sentiment score: "+sentiment+"\n");
+            // System.out.println("\n");
             // writer.write(str);
 
             writer.write(fileName+" "+sentiment);
             writer.close();
-            System.out.println("writing done!!!");
+            // System.out.println("writing done!!!");
             }catch(IOException e){System.out.println(e);}
             return fileName;
         }
 
         public String SortIntermediateData(String DirPath) throws TException {
-            // List<Map.Entry<String, Double>> pairs = new ArrayList<>();
-            Map<String, Double> map = new HashMap<String, Double>();
-            try{
-              InputStreamReader read = null;
-              BufferedReader reader = null;
-              File dir = new File(DirPath);
-              File[] directoryListing = dir.listFiles();
-              if (directoryListing != null) {
-                for (int i = 0; i < directoryListing.length; i++){
-                    if (directoryListing[i].isFile()){ //this line weeds out other directories/folders
-                        // SubmitTask(directoryListing[i].getPath(), 9090+((i+1)%5));
-                        read = new InputStreamReader(new FileInputStream(directoryListing[i]),"utf-8");
-                        reader = new BufferedReader(read);
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            String[] parts = line.split(" ");
-                            map.put(parts[0], parts[1]);
-                        }
 
+              String path = DirPath;
+              File file = new File(path);
+              List<String> outputFileList = new ArrayList<String>();
+              outputFileList = getFileList(file);
+              HashMap<String, Double> map = new HashMap<>();
+              try{
+                for (String l : outputFileList){
+                    File filename = new File(l);
+                    BufferedReader br = new BufferedReader(new FileReader(filename));
+                    String thisline = null;
+                    while((thisline = br.readLine()) != null) {
+                        String[] str = thisline.split(" ");
+                        map.put(str[0], Double.parseDouble(str[1]));
                     }
                 }
-              }
-            }catch(IOException e){System.out.println(e);}
-            File outputFile;
-            try{
-              // map = sortByValue(map);
+              }catch(Exception e){System.out.println(e);}
 
-              System.out.println("writing!!!");
-              outputFile = new File("./SortedData/Sortedfile.txt");
-              System.out.println("writing to" + outputFile.getPath());
-              File outputDirectory = new File("./SortedData/");
-
-              if (outputFile.exists())
-                  outputFile.delete();
-              // File directory = new File(outputDirectory);
+              List<Map.Entry<String, Double>> list = new ArrayList<>(map.entrySet());
+              Collections.sort(list, new Comparator<Map.Entry<String, Double>>() {
+                  @Override
+                  public int compare(Map.Entry<String, Double> m1, Map.Entry<String, Double> m2) {
+                      return -Double.compare(m1.getValue(), m2.getValue());
+                  }
+              });
+              File outputDirectory = new File("./data/");
               if (! outputDirectory.exists()){
                   outputDirectory.mkdir();
               }
-              BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile.getPath()));
-              // for (HashMap<String,Double> element : pairs) {
-              //     writer.write(element.getKey()+" "+element.getValue());
-              // }
-              Iterator it = map.entrySet().iterator();
-              while (it.hasNext()) {
-                  Map.Entry pair = (Map.Entry)it.next();
-                  writer.write(pair.getKey() + " " + pair.getValue());
-                  // System.out.println(pair.getKey() + " = " + pair.getValue());
-                  it.remove(); // avoids a ConcurrentModificationException
+              File outputFile = new File("./data/output.txt");
+              if (outputFile.exists()){
+                  outputFile.delete();
+                  System.out.println("--------------------------------------------------------------------------------");
+
+                  System.out.println("--------------------------------------------------------------------------------");
+                }
+              BufferedWriter out = null;
+              for (Map.Entry<String, Double> t:list) {
+                  try {
+                      out = new BufferedWriter(new OutputStreamWriter(
+                              new FileOutputStream("./data/output.txt", true)));
+                      out.write(t.getKey()+" "+t.getValue()+"\n");
+
+                  } catch (Exception e) {
+                      e.printStackTrace();
+                  } finally {
+                      try {
+                          out.close();
+                      } catch (IOException e) {
+                          e.printStackTrace();
+                      }
+                  }
+              }
+              return DirPath;
+          }
+
+          public static List<String> getFileList(File file) {
+              List<String> result = new ArrayList<String>();
+
+              if (!file.isDirectory()) {
+                  System.out.println(file.getAbsolutePath());
+                  result.add(file.getAbsolutePath());
+              } else {
+                  File[] directoryList = file.listFiles(new FileFilter() {
+                      public boolean accept(File file) {
+                          if (file.isFile()) {
+                              return true;
+                          } else {
+                              return false;
+                          }
+                      }
+                  });
+                  for (int i = 0; i < directoryList.length; i++) {
+                      result.add(directoryList[i].getPath());
+                  }
               }
 
-
-              writer.close();
-            }catch(IOException e){System.out.println(e);}
-            return outputFile.getPath();
+              return result;
           }
-          // private class ListComparator implements Comparator<String, double> {
-          //     @Override
-          //     public int compare(Person a, Person b) {
-          //         return a.name.compareToIgnoreCase(b.name);
-          //     }
-          // }
-          // public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-          //     List<Entry<K, V>> list = new ArrayList<>(map.entrySet());
-          //     list.sort(Entry.comparingByValue());
-          //
-          //     Map<K, V> result = new LinkedHashMap<>();
-          //     for (Entry<K, V> entry : list) {
-          //         result.put(entry.getKey(), entry.getValue());
-          //     }
-          //
-          //     return result;
-          // }
-
           public List<String> getSentimentWords(String path) throws TException {
             List<String> strList = new ArrayList<String>();
             File file = new File(path);

@@ -18,11 +18,13 @@ public class Mapper {
         try {
             handler = new CheckDirHandler();
             processor = new CheckDir.Processor(handler);
+            System.out.println(args[0]);
+            System.out.println(args[1]);
             handler.setLoadProb(Integer.parseInt(args[0]));
             Runnable simple = new Runnable() {
                 public void run() {
                   // System.out.println(args[0]);
-                    simple(processor, Integer.parseInt(args[0]));
+                    simple(processor, Integer.parseInt(args[1]));
                 }
             };
 
