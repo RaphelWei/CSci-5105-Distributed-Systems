@@ -21,7 +21,7 @@ public class Mapper {
             System.out.println(args[0]);
             System.out.println(args[1]);
             handler.setLoadProb(Double.parseDouble(args[0]));
-            if(args[1].equals("ture"))
+            if(args[1].equals("true"))
             handler.setLoadFlag();
             Runnable simple = new Runnable() {
                 public void run() {
