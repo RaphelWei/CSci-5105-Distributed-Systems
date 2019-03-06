@@ -5,10 +5,10 @@
 
 
 // java -cp ".:/usr/local/Thrift/*" Server
-// java -cp ".:/usr/local/Thrift/*" Mapper 0 9091
-// java -cp ".:/usr/local/Thrift/*" Mapper 0 9092
-// java -cp ".:/usr/local/Thrift/*" Mapper 0 9093
-// java -cp ".:/usr/local/Thrift/*" Mapper 0 9094
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 ture 9091
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 ture 9092
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 ture 9093
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 ture 9094
 // java -cp ".:/usr/local/Thrift/*" Sorter 9095
 
 // java -cp ".:/usr/local/Thrift/*" Client ./example
@@ -35,21 +35,26 @@ public class CheckDirHandler implements CheckDir.Iface
 {
         private List<String> goodWords = new ArrayList<String>();
         private List<String> badWords = new ArrayList<String>();
+        // private List<String> pathnames;
         private Map<String, String> statusRecords = new ConcurrentHashMap<String, String>();
         private Map<String, Integer> portRecords = new HashMap<String, Integer>();
         private String pathPositiveWords = "./positive.txt";
         private String pathNegativeWords = "./negative.txt";
         private String interDir = "./intermidiateData/";
+        private String outputDir = "./data/output.txt";
+        private int numNode = 4;
         private boolean loadFlag = false;
         // private Map<Integer, Double> LoadProb = new HashMap<Integer, Double>();
         // private int machinePort;
         private double loadProb = 0;
+        private String SortStatus = "-";
         //
         // // private int allwords = 0;
         // private double poswords = 0;
         // private double negwords = 0;
 
-        public void setLoadProb(double p){loadProb=p;loadFlag=true;}
+        public void setLoadProb(double p){loadProb=p;}
+        public void setLoadFlag(){loadFlag=true;}
         // private String intermidiatePath;
         // Word boundary defined as whitespace-characters-word boundary-whitespace
         private static final Pattern WORD_BOUNDARY = Pattern.compile("\\s*\\b\\s*");
@@ -65,12 +70,13 @@ public class CheckDirHandler implements CheckDir.Iface
 		    }
 
         @Override
-        public void CheckDirectory(String DirPath) throws TException {
-
-          File dir = new File(DirPath);
-          File[] directoryListing = dir.listFiles();
-          // List<String> statusRecords = new ArrayList<String>();
-          // private Map<Integer, String> records = new ConcurrentHashMap<Integer, String>();
+        public String CheckDirectory(List<String> Paths) throws TException {
+          // pathnames = Paths;
+          //
+          // File dir = new File(DirPath);
+          // File[] directoryListing = dir.listFiles();
+          // // List<String> statusRecords = new ArrayList<String>();
+          // // private Map<Integer, String> records = new ConcurrentHashMap<Integer, String>();
           File outputDirectory = new File(interDir);
           if (! outputDirectory.exists()){
               outputDirectory.mkdir();
@@ -84,12 +90,13 @@ public class CheckDirHandler implements CheckDir.Iface
             System.out.println("__________________________________________");
           }
           Random random = new Random();
-          if (directoryListing != null) {
-            for (int i = 0; i < directoryListing.length; i++){
-                if (directoryListing[i].isFile()){ //this line weeds out other directories/folders
-                  int port = 9090+(random.nextInt(4) + 1);
-                  statusRecords.put(directoryListing[i].getPath(), SubmitTask(directoryListing[i].getPath(), port));
-                  portRecords.put(directoryListing[i].getPath(), port);
+          if (Paths != null) {
+            for (int i = 0; i < Paths.size(); i++){
+              File temp = new File(Paths.get(i));
+                if (temp.isFile()){ //this line weeds out other directories/folders
+                  int port = 9090+(random.nextInt(numNode) + 1);
+                  statusRecords.put(Paths.get(i), SubmitTask(Paths.get(i), port));
+                  portRecords.put(Paths.get(i), i);
                 }
             }
           } else {
@@ -104,19 +111,34 @@ public class CheckDirHandler implements CheckDir.Iface
             left = false;
             for (Map.Entry<String, String> entry : statusRecords.entrySet())
             {
-
-              if(entry.getValue()=="!") {
-                SubmitTask(entry.getKey(), portRecords.get(entry.getKey()));
+              System.out.println(entry.getKey()+":   "+entry.getValue());
+              if(entry.getValue().equals("!")) {
+                System.out.println(entry.getKey()+" restarting");
+                int PortInd = random.nextInt(numNode) + 1;
+                if(PortInd == portRecords.get(entry.getKey())){
+                  PortInd = (PortInd+1)%numNode;
+                }
+                SubmitTask(entry.getKey(), PortInd+9090);
+                portRecords.put(entry.getKey(), PortInd);
                 left = true;
                 taskLeftCount=taskLeftCount+1;
-              } else if(entry.getValue()=="-"){
+              } else if(entry.getValue().equals("-")){
+                System.out.println(entry.getKey()+" waiting");
                 left = true;
                 taskLeftCount=taskLeftCount+1;}
             }
-            System.out.println("running tasks:  " + directoryListing.length);
-            System.out.println("finished tasks: " + (directoryListing.length-taskLeftCount));
+            System.out.println("running mapper tasks:  " + Paths.size());
+            System.out.println("finished mapper tasks: " + (Paths.size()-taskLeftCount));
           }
-          SubmitSorting(interDir, 9095);
+          SubmitSorting(statusRecords, 9095);
+          while(SortStatus.equals("-")){
+            try{
+              Thread.sleep(500);
+            }catch(Exception e){System.out.println(e);}
+            System.out.println("Sorting tasks is running" + Paths.size());
+          }
+          System.out.println("Sorting tasks is done   " + Paths.size());
+          return SortStatus;
         }
 
 
@@ -140,6 +162,7 @@ public class CheckDirHandler implements CheckDir.Iface
                         //contact server with pathname
                         // while(ret = client.CheckFile(file)=="!");
                         statusRecords.put(file, client.CheckFile(file));
+                        System.out.println("task status: " + statusRecords.get(file));
                         System.out.printf("%s finished\n", file);
                         transport.close();
                         // to write file
@@ -154,8 +177,8 @@ public class CheckDirHandler implements CheckDir.Iface
             }
 
             @Override
-            public String SubmitSorting(String interDir, int port) throws TException {
-              String ret = "-";
+            public void SubmitSorting(Map<String, String> statusRecords, int port) throws TException {
+              // String ret = "-";
               Runnable Check = new Runnable() {
                       public void run() {
                         try{
@@ -172,8 +195,9 @@ public class CheckDirHandler implements CheckDir.Iface
 
                             //contact server with pathname
                             // while(ret = client.CheckFile(file)=="!");
-                            statusRecords.put(interDir, client.SortIntermediateData(interDir));
-                            System.out.printf("%s finished\n", interDir);
+                            // statusRecords.put(interDir, client.SortIntermediateData(statusRecords));
+                            client.SortIntermediateData(statusRecords);
+                            System.out.printf("Sorting finished\n");
                             transport.close();
                             // to write file
                         } catch (TException x){
@@ -184,7 +208,7 @@ public class CheckDirHandler implements CheckDir.Iface
                   };
                   new Thread(Check).start();
                   System.out.printf("%s started\n", interDir);
-                  return ret;
+                  // return ret;
                 }
 
         @Override
@@ -193,6 +217,7 @@ public class CheckDirHandler implements CheckDir.Iface
           double negwords = 0;
           System.out.printf("CheckFile");
           if(Math.random()<loadProb && loadFlag){
+            System.out.println(path+" rejected with prob "+ loadProb);
             return "!";
           }
           System.out.printf("loadprob");
@@ -216,7 +241,7 @@ public class CheckDirHandler implements CheckDir.Iface
             while ((line = br.readLine()) != null) {
               // System.out.println(line);
               String thisline = line.toString();
-              thisline.replace("--", " ");
+              thisline = thisline.replaceAll("--", " ");
                 Matcher matcher = pattern.matcher(thisline);
                 while(matcher.find()){
                     if (goodWords.contains(matcher.group().toLowerCase())) {
@@ -255,19 +280,20 @@ public class CheckDirHandler implements CheckDir.Iface
             // System.out.println("\n");
             // writer.write(str);
 
-            writer.write(fileName+" "+sentiment);
+            writer.write(outputFile.getParentFile().getName()+"\\"+outputFile.getName()+" "+sentiment);
             writer.close();
             // System.out.println("writing done!!!");
             }catch(IOException e){System.out.println(e);}
-            return fileName;
+            return outputFile.getPath();
         }
 
-        public String SortIntermediateData(String DirPath) throws TException {
+        public void SortIntermediateData(Map<String, String> statusRecords) throws TException {
 
-              String path = DirPath;
-              File file = new File(path);
-              List<String> outputFileList = new ArrayList<String>();
-              outputFileList = getFileList(file);
+              // String path = DirPath;
+              // String ret = "!";
+              // File file = new File(path);
+              List<String> outputFileList = new ArrayList<String>(statusRecords.values());
+              // outputFileList = getFileList(file);
               HashMap<String, Double> map = new HashMap<>();
               try{
                 for (String l : outputFileList){
@@ -292,7 +318,7 @@ public class CheckDirHandler implements CheckDir.Iface
               if (! outputDirectory.exists()){
                   outputDirectory.mkdir();
               }
-              File outputFile = new File("./data/output.txt");
+              File outputFile = new File(outputDir);
               if (outputFile.exists()){
                   outputFile.delete();
                   System.out.println("--------------------------------------------------------------------------------");
@@ -303,7 +329,7 @@ public class CheckDirHandler implements CheckDir.Iface
               for (Map.Entry<String, Double> t:list) {
                   try {
                       out = new BufferedWriter(new OutputStreamWriter(
-                              new FileOutputStream("./data/output.txt", true)));
+                              new FileOutputStream(outputDir, true)));
                       out.write(t.getKey()+" "+t.getValue()+"\n");
 
                   } catch (Exception e) {
@@ -316,7 +342,7 @@ public class CheckDirHandler implements CheckDir.Iface
                       }
                   }
               }
-              return DirPath;
+              SortStatus = outputDir;
           }
 
           public static List<String> getFileList(File file) {

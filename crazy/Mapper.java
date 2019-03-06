@@ -20,11 +20,13 @@ public class Mapper {
             processor = new CheckDir.Processor(handler);
             System.out.println(args[0]);
             System.out.println(args[1]);
-            handler.setLoadProb(Integer.parseInt(args[0]));
+            handler.setLoadProb(Double.parseDouble(args[0]));
+            if(args[1].equals("ture"))
+            handler.setLoadFlag();
             Runnable simple = new Runnable() {
                 public void run() {
                   // System.out.println(args[0]);
-                    simple(processor, Integer.parseInt(args[1]));
+                    simple(processor, Integer.parseInt(args[2]));
                 }
             };
 

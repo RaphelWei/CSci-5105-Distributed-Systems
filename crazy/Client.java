@@ -22,8 +22,30 @@ public class Client {
 			      client.ping();
 
 
-            //contact server with pathname
-            client.CheckDirectory(args[0]);
+
+            File dir = new File(args[0]);
+            File[] directoryListing = dir.listFiles();
+            List<String> paths = new ArrayList();
+            // List<String> statusRecords = new ArrayList<String>();
+            // private Map<Integer, String> records = new ConcurrentHashMap<Integer, String>();
+            // File outputDirectory = new File(interDir);
+            // if (! outputDirectory.exists()){
+            //     outputDirectory.mkdir();
+            // } else{
+            //   File[] files = outputDirectory.listFiles();
+            //   System.out.println("__________________________________________");
+            //   for (int i=0; i<files.length; i++){
+            //     System.out.println(files[i].getName());
+            //       files[i].delete();
+            //   }
+            //   System.out.println("__________________________________________");
+            // }
+            for(int i =0; i<directoryListing.length; i++){
+              paths.add(directoryListing[i].getPath());
+            }
+
+            //contact server with pathnames
+            client.CheckDirectory(paths);
             // System.out.printf("I got %d from the server\n", ret);
 
 
