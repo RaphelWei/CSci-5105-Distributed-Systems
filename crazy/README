@@ -1,0 +1,44 @@
+User Document
+compile:
+// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Server.java -d .
+// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Client.java -d .
+// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper.java -d .
+
+run:
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Server
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9091
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9092
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9093
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9094
+
+// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Client ./example
+
+Server is default at 9090.
+
+There are 3 arguments for Mapper.
+The first is loadProb for deciding to reject load and to inject load.
+The second is loadFlag for deciding whether need to consider rejection.
+The third is the port number. Note that the ports Server try to connect is set as the port of Server + (random.nextInt(numNode) + 1), so there is a constrain for those port selections both at Server and at Compute Node and our assumption is if Server is at 9090 and we want 4 compute nodes, then compute nodes would at 9091, 9092, 9093, 9094.
+
+
+Design Document
+- We have 3 parts in out design, Client, Server and Compute Node.
+- A Client read all file pathnames in a specified directory into a list. Then this list is submitted by the procedure called CheckDirectory for Server to work on them.
+- For each pathname passed to Server, the Server would start a thread specific to handle connection to a compute node and submit the pathname to a compute node to calculate sentiment value. After submit each task, a corresponding record would be setup to keep track the status of the task.
+- A task can be marked as "-", "!" or the pathname of the corresponding output file. "-" means no status come from the compute node. "!" means error. Pathname means success.
+- A compute node can accept multiple connection each with a thread simultaneously. For Mapper tasks, a compute node take a pathname and analyze the sentiment of words inside to calculate a sentiment value for the file(pathname) passed in. Then the Mapper would write a filename, sentiment value pair into a file called the file passed in.
+- When a Mapper task is done, it would return its status to Server.
+- Server periodically check the status of each task and based on the status to keep waiting("-"), restart the task"!" or go for next step(pathname).
+- After all Mapper tasks are done, Server would pass the map with all output file pathnames as a Sorter task to one Compute Node.
+- The Sort task would sort all pathnames based on the corresponding values and write the sorted list into a file. After Sorter finishing, it return the pathname of its output file to Server.
+- When Server receciving the pathname of final output, it return it to Client. Or it keepes periodically checking.
+
+
+
+
+*************************************************************************
+Test Description
+1) All compute nodes have the same (or similar) load probability, e.g., low: (0.2, 0.2, 0.2, 0.2) and high: (0.8, 0.8, 0.8, 0.8).
+2) All compute nodes have different load probability, e.g., (0.1, 0.5, 0.2, 0.9).
+
+*************************************************************************
