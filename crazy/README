@@ -1,17 +1,17 @@
 User Document
 compile:
-// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Server.java -d .
-// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Client.java -d .
-// javac -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Server.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Client.java -d .
+// javac -cp ".:/usr/local/Thrift/*" Mapper.java -d .
 
 run:
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Server
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9091
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9092
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9093
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Mapper 0 true 9094
+// java -cp ".:/usr/local/Thrift/*" Server
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 true 9091
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 true 9092
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 true 9093
+// java -cp ".:/usr/local/Thrift/*" Mapper 0 true 9094
 
-// java -cp ".:/Users/muyun/Downloads/thrift-0.11.0/lib/java/build/*" Client ./example
+// java -cp ".:/usr/local/Thrift/*" Client ./input_dir
 
 Server is default at 9090.
 
