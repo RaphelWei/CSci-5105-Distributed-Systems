@@ -18,6 +18,8 @@ import org.apache.thrift.protocol.TProtocol;
 // import java.util.concurrent.*;
 
 public class Node {
+    public WorkWithNodeHandler handler;
+    public WorkWithNode.Processor processor;
     // public variable?
     // private String NodeID = 0;
     // private String[] KeyRange = {"0", "0"};
@@ -35,7 +37,7 @@ public class Node {
 
             // as a client
             while(true){
-  			      String ret = client.Join();
+  			      String ret = client.Join(myIP, myPort);
               String[] retparts = ret.split("|");
               if(retparts[0].equals("NACK0")){
                 System.out.println(retparts[1]);
@@ -50,13 +52,26 @@ public class Node {
                 System.out.println("terminating");
                 return;
               } else if(retparts[0].equals("done")){
+                // String[] ContactInfo = retparts[1].split(":");
+                handler.setNodeID(Integer.parseInt(retparts[1]));
+                handler.setmyInfo(myIP+":"+myPort+":"+retparts[1]);
+                handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
                 break;
               } else if(retparts[0].equals("ACK")){
-                // String[] ContactInfo = retparts[1].split(":");
-                // NodeID = Integer.parseInt(ContactInfo[0]);
+                String[] ContactInfo = retparts[1].split(":");
+                handler.setNodeID(Integer.parseInt(ContactInfo[0]));
+                handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
 
+                // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
+                // String ret
+                // if(Integer.parseInt(ContactInfo[0])+1!=Integer.parseInt(ContactInfo[3])){
+                String ret = ContactInfo[0]+":"+CorrectContactInfo(retparts[1]);
+                   // ContactInfo = ret.split(":");
+                // }
+
+                // actual contact (update DHT)
                 // ACK|myID:IP:Port:ContactNodeID:myIP:myPort
-                ContactOtherNode(retparts[1]+":"+myIP+":"+myPort);
+                ContactOtherNode(ret);
                 break;
               }
             }
@@ -68,9 +83,29 @@ public class Node {
         }
 
     }
+    public String CorrectContactInfo(String Info){
+      try {
+          TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+
+          //Try to connect
+          transport.open();
+
+          // as client reach to other nodes to get information back.
+          String[] ContactInfo = Info.split(":");
+          // if(ContactInfo)
+
+          return client.find_successor_ByNodeID(ContactInfo[0], ContactInfo[3], false);
+
+      } catch(TException e) {
+
+      }
+    }
+
 
     public Void ContactOtherNode(String Info){
-      // String[] ContactInfo = Info.split(":");
+      String[] ContactInfo = Info.split(":");
       // String myID = ContactInfo[0];
       // String hostname = ContactInfo[1];
       // String port = ContactInfo[2];

@@ -21,7 +21,6 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   private int NumNode = 0;
   private Boolean Joining = false;
   private int nodeID = -1;
-  private int
 
   // <nodeID, hostname:Port>
   private Map<Integer, String> NodeRecords = new HashMap<Integer, String>();
@@ -37,16 +36,16 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     }
 
     Joining=true;
-    if(nodeID>=NumNode){
+    if(nodeID>=NumNode){// We have reach the max number of nodes.
       Joining=false;
       return "NACK1|We have reach the max number of nodes.";
     }
 
-    if(NodeRecords.isEmpty()){
+    if(NodeRecords.isEmpty()){ // This is the first node.
       nodeID=nodeID+1;
       NodeRecords.put(nodeID,IP+":"+Port);
       Joining=false;
-      return "done|This is the first node.";
+      return "done|"+nodeID;
     }
 
     Random r = new Random();
