@@ -38,12 +38,14 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
 
     Joining=true;
     if(nodeID>=NumNode){
+      Joining=false;
       return "NACK1|We have reach the max number of nodes.";
     }
 
     if(NodeRecords.isEmpty()){
       nodeID=nodeID+1;
       NodeRecords.put(nodeID,IP+":"+Port);
+      Joining=false;
       return "done|This is the first node.";
     }
 
@@ -51,6 +53,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     int ContactNodeID = nodeID-r.nextInt((nodeID) + 1);
     nodeID = nodeID+1;
     NodeRecords.put(nodeID,IP+":"+Port);
+    // ACK|nodeID:IP:Port:ContactNodeID
     return "ACK|"+nodeID+":"+NodeRecords.get(ContactNodeID)+":"+ContactNodeID;
 
   }

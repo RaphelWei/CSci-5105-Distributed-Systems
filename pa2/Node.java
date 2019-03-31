@@ -19,12 +19,14 @@ import org.apache.thrift.protocol.TProtocol;
 
 public class Node {
     // public variable?
-    private int NodeID = 0;
+    // private String NodeID = 0;
     // private String[] KeyRange = {"0", "0"};
     public static void main(String [] args) {
 
         try {
-            TTransport  transport = new TSocket("localhost", 9090);
+            String myIP = args[0];
+            String myPort = args[1];
+            TTransport  transport = new TSocket(myIP, Integer.parseInt(myPort));
             TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
             WorkWithSuperNode.Client client = new WorkWithSuperNode.Client(protocol);
 
@@ -50,9 +52,11 @@ public class Node {
               } else if(retparts[0].equals("done")){
                 break;
               } else if(retparts[0].equals("ACK")){
-                String[] ContactInfo = retparts[1].split(":");
-                NodeID = Integer.parseInt(ContactInfo[0]);
-                ContactOtherNode(ContactInfo);
+                // String[] ContactInfo = retparts[1].split(":");
+                // NodeID = Integer.parseInt(ContactInfo[0]);
+
+                // ACK|myID:IP:Port:ContactNodeID:myIP:myPort
+                ContactOtherNode(retparts[1]+":"+myIP+":"+myPort);
                 break;
               }
             }
@@ -65,10 +69,14 @@ public class Node {
 
     }
 
-    public Void ContactOtherNode(String [] ContactInfo){
-      String hostname = ContactInfo[1];
-      String port = ContactInfo[2];
-      String NodeID = ContactInfo[3];
+    public Void ContactOtherNode(String Info){
+      // String[] ContactInfo = Info.split(":");
+      // String myID = ContactInfo[0];
+      // String hostname = ContactInfo[1];
+      // String port = ContactInfo[2];
+      // String ContactNodeID = ContactInfo[3];
+      // String myIP = ContactInfo[4];
+      // String myPort = ContactInfo[5];
 
 
       try {
@@ -81,7 +89,7 @@ public class Node {
 
           // as client reach to other nodes to get information back.
 
-
+          client.UpdateDHT(Info);
 
 
       } catch(TException e) {
