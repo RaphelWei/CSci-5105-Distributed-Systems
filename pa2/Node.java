@@ -56,22 +56,23 @@ public class Node {
                 handler.setNodeID(Integer.parseInt(retparts[1]));
                 handler.setmyInfo(myIP+":"+myPort+":"+retparts[1]);
                 handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                // TODO:set fingertable
+                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 break;
               } else if(retparts[0].equals("ACK")){
+                //myNodeMD5:tarAddr:tarPort:tarNodeMD5
                 String[] ContactInfo = retparts[1].split(":");
                 handler.setNodeID(Integer.parseInt(ContactInfo[0]));
                 handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
 
                 // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
-                // String ret
-                // if(Integer.parseInt(ContactInfo[0])+1!=Integer.parseInt(ContactInfo[3])){
-                String ret = ContactInfo[0]+":"+CorrectContactInfo(retparts[1]);
-                   // ContactInfo = ret.split(":");
-                // }
+                //myNodeMD5:tarAddr:tarPort:tarNodeMD5
+                String CorrectedContactInfo = CorrectContactInfo(retparts[1]);
 
                 // actual contact (update DHT)
                 // ACK|myID:IP:Port:ContactNodeID:myIP:myPort
-                ContactOtherNode(ret);
+                ContactOtherNode(CorrectedContactInfo);
                 break;
               }
             }

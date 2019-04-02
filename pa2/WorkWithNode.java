@@ -68,6 +68,8 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   // each new node would updata its predecessor's fingerTable first.
   // just check if the finger's corresponding key is before the new node.
   // then update fingertable with find_successor_ByKey(?)
+
+  // MD5 comparison with BigInteger class. it has a compareTo method.
   @Override
   public String UpdateDHT(String Info){
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -126,10 +128,17 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     return KeyRange;
   }
 
+  //myNodeMD5:tarAddr:tarPort:tarNodeMD5
+  public String CorrectContactInfo(String InitContactInfo){
+    String[] InitContactInfoList = InitContactInfo.split(":");
+    String CorrectContactInfo = find_successor_ByKey(InitContactInfoList[0], NodeID, false);
+  }
+
+
 
   // randomly given an ID, which is not in the interval provided by the supernode
-  public String[] find_successor_ByKey(String key, String MyID, boolean passedZero){
-      // base condition: check if current NodeID passed the initID.
+  public String find_successor_ByKey(String key, String initID, boolean passedZero){
+      // base condition 1: check if current NodeID passed the initID.
       // here the flag check if it is second time to check NodeID.
       if(Integer.parseInt(initID)<=Integer.parseInt(NodeID)&&passedZero){
         return "NACK2|the key is not in the DHT range!";
@@ -143,20 +152,30 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
       PointedKeyBoundaries[0] = NodeID;
       for(int i = 0; i < Fingers.length; i++){
         String[] ContactPoint = Fingers[i].split(":");
-        PointedKeyBoundaries[i+1] = ContactPoint[4];
+        PointedKeyBoundaries[i+1] = ContactPoint[2];
       }
       // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
       String GuessContactPoint;
+      BigInteger BIkey = new BigInteger(key, 16);
+      // check if key in the range between fingers(including me): [me, figure[figure.length-1]]
       for(int i = 0; i < Fingers.length-1; i++){
-        if(key<PointedKeyBoundaries[i+1]&&key>PointedKeyBoundaries[i]){
-          if(i==0){ // if node wanted is in the range the successor
-            return Fingers[i+1];
+
+        if(BIkey.compareTo(new BigInteger(PointedKeyBoundaries[i+1], 16))<0)&&
+        BIkey.compareTo(new BigInteger(PointedKeyBoundaries[i], 16)>0){
+          if(i==0){ // if node wanted is in the range between me and my successor
+            // base condition 2: my successor is the correct contact point.
+            return Fingers[i];
           }else{
-            GuessContactPoint=Fingers[i];
+            // for i>0, found the key is between finger[i-1] and finger[i]
+            // contact that node to again call find_successor_ByKey
+            GuessContactPoint=Fingers[i-1];
+            break;
           }
         }
       }
-      if(key<PointedKeyBoundaries[0]&&key>PointedKeyBoundaries[Fingers.length]){
+      // check if key in the range between farthest finger and me: [figure[figure.length-1], me]
+      if(BIkey.compareTo(new BigInteger(PointedKeyBoundaries[0], 16))<0&&
+      BIkey.compareTo(new BigInteger(PointedKeyBoundaries[Fingers.length], 16)>0){
           GuessContactPoint=Fingers[i];
       }
 
@@ -181,7 +200,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
         }
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        return client.find_successor_ByNodeID(ID, initID, passedZero);
+        return client.find_successor_ByKey(ID, initID, passedZero);
       } catch(TException e) {
       }
   }
@@ -192,62 +211,63 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 
   // public String find_successor_ByNodeID(String ID, String MyID)
 
-  public String find_successor_ByNodeID(String ID, String initID, boolean passedZero){
-        // base condition: check if current NodeID passed the initID.
-        // here the flag check if it is second time to check NodeID.
-        if(Integer.parseInt(initID)<=Integer.parseInt(NodeID)&&passedZero){
-          return "NACK2|the key is not in the DHT range!";
-        }
-
-        String[] Fingers = FingerTable.split("|");
-
-        // get ranges between each 2 finger nodeID
-        String[] PointedNodesIDs = new String[Fingers.length+1];
-        PointedNodesIDs[0] = NodeID;
-        for(int i = 0; i < Fingers.length; i++){
-          String[] ContactPoint = Fingers[i].split(":");
-          PointedNodesIDs[i+1] = ContactPoint[2];
-        }
-        // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
-        String GuessContactPoint;
-        for(int i = 0; i < Fingers.length-1; i++){
-          if(ID<PointedNodesIDs[i+1]&&ID>PointedNodesIDs[i]){
-            if(i==0){ // if node wanted is in the range the successor
-              return Fingers[i+1];
-            }else{
-              GuessContactPoint=Fingers[i];
-            }
-          }
-        }
-        if(ID<PointedNodesIDs[0]&&ID>PointedNodesIDs[Fingers.length]){
-            GuessContactPoint=Fingers[i];
-        }
-
-        // contact the GuessContactPoint to see its finger table.
-        try{
-          TTransport  transport = new TSocket(GuessContactPoint[0], Integer.parseInt(GuessContactPoint[1]));
-          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
-          //Try to connect
-          transport.open();
-
-
-          // as client reach to other nodes to get information back.
-          // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          // help base condition to make sure only check when second time current nodeID is the initID.
-          // String tarInfo = client.getmyInfo();
-          // String[] tarInfoList = tarInfo.split(":")
-          String[] myInfoList = myInfo.split(":");
-
-          if(Integer.parseInt(ContactPoint[2])<Integer.parseInt(myInfoList[2])){
-            passedZero = true;
-          }
-          // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-          return client.find_successor_ByNodeID(ID, initID, passedZero);
-        } catch(TException e) {
-        }
-  }
+  // // now we are using MD5 as ID, this function is replaced by "ByKey".
+  // public String find_successor_ByNodeID(String ID, String initID, boolean passedZero){
+  //       // base condition: check if current NodeID passed the initID.
+  //       // here the flag check if it is second time to check NodeID.
+  //       if(Integer.parseInt(initID)<=Integer.parseInt(NodeID)&&passedZero){
+  //         return "NACK2|the key is not in the DHT range!";
+  //       }
+  //
+  //       String[] Fingers = FingerTable.split("|");
+  //
+  //       // get ranges between each 2 finger nodeID
+  //       String[] PointedNodesIDs = new String[Fingers.length+1];
+  //       PointedNodesIDs[0] = NodeID;
+  //       for(int i = 0; i < Fingers.length; i++){
+  //         String[] ContactPoint = Fingers[i].split(":");
+  //         PointedNodesIDs[i+1] = ContactPoint[2];
+  //       }
+  //       // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
+  //       String GuessContactPoint;
+  //       for(int i = 0; i < Fingers.length-1; i++){
+  //         if(ID<PointedNodesIDs[i+1]&&ID>PointedNodesIDs[i]){
+  //           if(i==0){ // if node wanted is in the range the successor
+  //             return Fingers[i+1];
+  //           }else{
+  //             GuessContactPoint=Fingers[i];
+  //           }
+  //         }
+  //       }
+  //       if(ID<PointedNodesIDs[0]&&ID>PointedNodesIDs[Fingers.length]){
+  //           GuessContactPoint=Fingers[i];
+  //       }
+  //
+  //       // contact the GuessContactPoint to see its finger table.
+  //       try{
+  //         TTransport  transport = new TSocket(GuessContactPoint[0], Integer.parseInt(GuessContactPoint[1]));
+  //         TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+  //         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+  //         //Try to connect
+  //         transport.open();
+  //
+  //
+  //         // as client reach to other nodes to get information back.
+  //         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //         // help base condition to make sure only check when second time current nodeID is the initID.
+  //         // String tarInfo = client.getmyInfo();
+  //         // String[] tarInfoList = tarInfo.split(":")
+  //         String[] myInfoList = myInfo.split(":");
+  //
+  //         if(Integer.parseInt(ContactPoint[2])<Integer.parseInt(myInfoList[2])){
+  //           passedZero = true;
+  //         }
+  //         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  //
+  //         return client.find_successor_ByNodeID(ID, initID, passedZero);
+  //       } catch(TException e) {
+  //       }
+  // }
 }
   // public String[] find_predecessor_ByNodeID(String ID, String MyID){
   //
