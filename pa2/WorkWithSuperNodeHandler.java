@@ -66,7 +66,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   }
 
   public static String getMd5(String input)
-{
+  {
     try {
 
         // Static getInstance method is called with hashing MD5
@@ -91,5 +91,5 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     catch (NoSuchAlgorithmException e) {
         throw new RuntimeException(e);
     }
-}
+  }
 }

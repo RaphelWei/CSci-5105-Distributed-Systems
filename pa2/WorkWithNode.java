@@ -26,6 +26,10 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   private NavigableMap<Stirng, String> records = new TreeMap<>();
   private String NodeID;
 
+  public Void setKeyRange(String Range){
+    KeyRange = Range;
+  }
+
   public Void setNodeID(String MyID){
     NodeID = MyID;
   }
@@ -45,6 +49,9 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   // IP:Port:NodeID:KeyRange|IP:Port:NodeID:KeyRange
   private String fingerTable;
 
+  public Void setfingerTable(String content){
+    fingerTable=content;
+  }
   // public static void SortByKey(){
   //   // TreeMap to store values of HashMap
   //   TreeMap<String, String> sorted = new TreeMap<>();
@@ -73,46 +80,46 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   @Override
   public String UpdateDHT(String Info){
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    // do remember, when adding new keys, convert hex MD5 coding to decimal!!!!!!!!!!!
-    // int value = Integer.parseInt(hex, 16);
-    // therefore, we only have string of decimal for the key range.
+    // Using String to represent MD5 code.
+    // need BigInteger(md5, 16) to get numeric operations.
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     // find the second half
-    String middleKey = Integer.toString((Integer.parseInt(records.firstEntry().getKey())+Integer.parseInt(records.lastEntry().getKey()))/2);
+    // // =====================================================
+    // // if allow adding node while there are content in DHT
+    // BigInteger hBI= new BigInteger(records.firstEntry().getKey());
+    // BigInteger tBI= new BigInteger(records.lastEntry().getKey());
+    // // =====================================================
+
+    String[] keyBoundaries =  KeyRange.split(":");
+    BigInteger hBI= new BigInteger(keyBoundaries[0]);
+    BigInteger tBI= new BigInteger(keyBoundaries[1]);
+    String middleKey = hBI.add(tBI).divide(new BigInteger(2)).toString();
+    String premiddleKey = hBI.add(tBI).divide(new BigInteger(2)).subtract(new BigInteger(1)).toString();
     String pairset;
 
-    // one way
-    //================================
-    NavigableMap<Stirng, String> tailMap = new TreeMap<String,String>(records.tailMap(middleKey));
+
+    // ===========================================================
+    // // if allow adding node while there are content in DHT
+    // // then DHT content need to be migrated.
+    // NavigableMap<Stirng, String> headMap = new TreeMap<String,String>(records.headMap(middleKey));
     //-----------------------------
-    // NavigableMap<Stirng, String> tailMap = new TreeMap<String,String>();
-    // tailMap.putAll(records.tailMap(middleKey));
+    // NavigableMap<Stirng, String> headMap = new TreeMap<String,String>();
+    // headMap.putAll(records.tailMap(middleKey));
     //-----------------------------
-    JSONObject pairsetJSON = new JSONObject(records.tailMap(middleKey));
-    pairset = pairsetJSON.toString();
+    // JSONObject pairsetJSON = new JSONObject(records.headMap(middleKey));
+    // pairset = pairsetJSON.toString();
+    //
+    // records.navigableKeySet().removeAll(tailMap.navigableKeySet());
+    // KeyRange=middleKey+":"+keyBoundaries[1];
+    //
+    //
+    // predecessor, successor, pariset(DHT content), keyRange
+    // String[] ret = predecessorInfo+"&"+fingerTable[0]+"&"+pairset+"&"+keyBoundaries[0]+":"+premiddleKey;
+    // ===========================================================
 
-    records.navigableKeySet().removeAll(tailMap.navigableKeySet());
-    //================================
-
-
-    // the other way
-    //================================
-    NavigableMap<Stirng, String> tailMap = new TreeMap<String,String>();
-    while(true){
-      if(records.lastEntry().getKey()<=middleKey){
-        break;
-      }
-      Map.Entry<String,String> temp = records.pollLastEntry();
-      tailMap.put(temp.getKey(), temp.getValue());
-
-    }
-    JSONObject pairsetJSON = new JSONObject(tailMap);
-    pairset = pairsetJSON.toString();
-    //================================
-
-    // predecessor, successor, pairset
-    String[] ret = predecessorInfo+"&"+fingerTable[0]+"&"+pairset;
+    // predecessor, fingerTable(the first one is successor), keyRange
+    String[] ret = predecessorInfo+"&"+fingerTable[0]+"&"+fingerTable+":"+premiddleKey;
 
     // String[] ContactInfo = Info.split(":");
     // String sourceIP = ContactInfo[4];

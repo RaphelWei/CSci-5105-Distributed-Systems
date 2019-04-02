@@ -68,11 +68,25 @@ public class Node {
 
                 // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
                 //myNodeMD5:tarAddr:tarPort:tarNodeMD5
-                String CorrectedContactInfo = CorrectContactInfo(retparts[1]);
+                String CorrectedContactInfo = ContactInfo[0]+":"+CorrectContactInfo(retparts[1]);
 
                 // actual contact (update DHT)
                 // ACK|myID:IP:Port:ContactNodeID:myIP:myPort
-                ContactOtherNode(CorrectedContactInfo);
+
+                String myPartialDHTdata = ContactOtherNode(CorrectedContactInfo);
+                // predecessor, successor, keyRange
+                String[] myPartialDHTdataList = myPartialDHTdata.split("&");
+                handler.setpredecessorInfo(myPartialDHTdataList[0]);
+                handler.setKeyRange(myPartialDHTdataList[2]);
+
+                // in joinin process,
+                // now new node got fingertable of its succcessor;
+                // next I need to update the node's finger table right before the new node.
+                // next I may be able to use find successor to update all finger data.
+
+
+
+                handler.setfingerTable(myPartialDHTdataList[1]);
                 break;
               }
             }
@@ -97,7 +111,7 @@ public class Node {
           String[] ContactInfo = Info.split(":");
           // if(ContactInfo)
 
-          return client.find_successor_ByNodeID(ContactInfo[0], ContactInfo[3], false);
+          return client.find_successor_ByKey(ContactInfo[0], ContactInfo[3], false);
 
       } catch(TException e) {
 
@@ -105,7 +119,7 @@ public class Node {
     }
 
 
-    public Void ContactOtherNode(String Info){
+    public String ContactOtherNode(String Info){
       String[] ContactInfo = Info.split(":");
       // String myID = ContactInfo[0];
       // String hostname = ContactInfo[1];
@@ -125,8 +139,7 @@ public class Node {
 
           // as client reach to other nodes to get information back.
 
-          client.UpdateDHT(Info);
-
+          return client.UpdateDHT(Info);
 
       } catch(TException e) {
 
