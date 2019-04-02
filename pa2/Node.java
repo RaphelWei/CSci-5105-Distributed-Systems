@@ -67,13 +67,13 @@ public class Node {
                 handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
 
                 // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
+                // this not will be my successor.
                 //myNodeMD5:tarAddr:tarPort:tarNodeMD5
                 String CorrectedContactInfo = ContactInfo[0]+":"+CorrectContactInfo(retparts[1]);
 
                 // actual contact (update DHT)
-                // ACK|myID:IP:Port:ContactNodeID:myIP:myPort
-
-                String myPartialDHTdata = ContactOtherNode(CorrectedContactInfo);
+                // myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
+                String myPartialDHTdata = ContactOtherNode(CorrectedContactInfo+":"+myIP+":"+myPort);
                 // predecessor, successor, keyRange
                 String[] myPartialDHTdataList = myPartialDHTdata.split("&");
                 handler.setpredecessorInfo(myPartialDHTdataList[0]);
@@ -84,9 +84,21 @@ public class Node {
                 // next I need to update the node's finger table right before the new node.
                 // next I may be able to use find successor to update all finger data.
 
+                String fingertable = myPartialDHTdataList[1];
+                String[] Fingers = fingertable.split("|");
+                for(int i = 0; i<Fingers.legnth; i++){
 
+                  String[] FingerInfo1 = Fingers[i].split(":");
+                  // BigInteger BIFI1 = new BigInteger(FingerInfo1[2], 16);
+                  // String[] FingerInfo2 = Fingers[i-1].split(":");
+                  // BigInteger BIFI2 = new BigInteger(FingerInfo2[2], 16);
+                  // if(BIFI1.compareTo(BIFI2))
+
+                  String handler.find_successor_ByKey(FingerInfo1[2]);
+                }
 
                 handler.setfingerTable(myPartialDHTdataList[1]);
+
                 break;
               }
             }
@@ -118,7 +130,7 @@ public class Node {
       }
     }
 
-
+    // myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
     public String ContactOtherNode(String Info){
       String[] ContactInfo = Info.split(":");
       // String myID = ContactInfo[0];
@@ -139,7 +151,8 @@ public class Node {
 
           // as client reach to other nodes to get information back.
 
-          return client.UpdateDHT(Info);
+          // myIP:myPort:myID
+          return client.UpdateDHT(ContactInfo[4]+":"+ContactInfo[5]+":"+ContactInfo[0]);
 
       } catch(TException e) {
 

@@ -22,7 +22,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   private Boolean Joining = false;
   private int nodeIdx = -1;
 
-  // <nodeID, hostname:Port>
+  // nodeIDx, hostname:Port:NodeMD5
   private Map<Integer, String> NodeRecords = new HashMap<Integer, String>();
 
   @Override
