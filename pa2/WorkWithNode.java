@@ -59,6 +59,15 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   //       records.put(entry.getKey(), entry.getValue());
   // }
 
+  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  // when updating finger table, try just update the successor pointer of the immediate predecessor.
+  // then we can update other nodes's finger table with existing finger table.
+  // the new node just split the range of a current node. the former way to find this existing node would lead to the new node now. and finger table for other keys won't change.
+
+  // special case to handle the second node. at this point, the finger table of the first node all point to itself.
+  // each new node would updata its predecessor's fingerTable first.
+  // just check if the finger's corresponding key is before the new node.
+  // then update fingertable with find_successor_ByKey(?)
   @Override
   public String UpdateDHT(String Info){
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
