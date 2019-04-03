@@ -7,19 +7,23 @@ import org.apache.thrift.transport.TSSLTransportFactory.TSSLTransportParameters;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 
-// import java.io.*;
-// import java.util.*;
-// import java.util.regex.Matcher;
-// import java.util.regex.Pattern;
-// import java.io.File;
-// import java.util.Map;
-// import java.util.HashMap;
-// import java.util.Iterator;
-// import java.util.concurrent.*;
+
+import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TServer.Args;
+import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
+import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TServerTransport;
+
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
 
 public class Node {
-    public WorkWithNodeHandler handler;
-    public WorkWithNode.Processor processor;
+    public static WorkWithNodeHandler handler;
+    public static WorkWithNode.Processor processor;
     // public variable?
     // private String NodeID = 0;
     // private String[] KeyRange = {"0", "0"};
@@ -65,8 +69,9 @@ public class Node {
                 handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
                 // all my fingers point to me.
                 String fingerTable = myIP+":"+myPort+":"+retparts[1];
-                For(int i = 1; i<Integer.parseInt(m); i++){
-                  fingerTable=fingerTable+"|"myIP+":"+myPort+":"+retparts[1];
+                int Hashm = Integer.parseInt(m);
+                for(int i = 1; i<Hashm; i++){
+                  fingerTable=fingerTable+"|"+myIP+":"+myPort+":"+retparts[1];
                 }
                 handler.setfingerTable(fingerTable);
                 break;
@@ -96,14 +101,14 @@ public class Node {
                 // next I need to update the node's finger table right before the new node. // this has been done by the CorrectedContact node
                 // next I may be able to use find successor to update all finger data.
 
-                BigInteger two = new BigInteger(2);
+                BigInteger two = BigInteger.valueOf(2);
                 BigInteger maxMD5 = two.pow(128);
 
                 String fingertable = myPartialDHTdataList[1];
                 String[] Fingers = fingertable.split("|");
                 BigInteger myNodeID = new BigInteger(ContactInfo[0], 16);
                 String myfingerTable = correctTarInfo;
-                for(int i = 1; i<Fingers.legnth; i++){
+                for(int i = 1; i<Fingers.length; i++){
 
                   // String[] FingerInfo1 = Fingers[i].split(":");
                   // BigInteger BIFI1 = new BigInteger(FingerInfo1[2], 16);
@@ -120,12 +125,12 @@ public class Node {
                   myfingerTable = myfingerTable+"|"+finger;
                 }
                 handler.setfingerTable(myfingerTable);
-                UpdateOthers();
+                UpdateOthers(Fingers.length, ContactInfo[0]);
 /////////////////////////////////
                 break;
               }
             }
-
+            client.PostJoin(myIP, myPort);
             // as a server
             Runnable simple = new Runnable() {
                 public void run() {
@@ -156,10 +161,11 @@ public class Node {
 
 
 
-    public Void UpdateOthers(String[] Fingers, BigInteger myNodeID){
-      BigInteger two = new BigInteger(2);
-      for(int i=0; i<Fingers.length;i++){
-        String affectKey = myNodeID.subtract(two.pow(i-1)).toString(16);
+    public static void UpdateOthers(int Hashm, String myNodeID){
+      BigInteger BImyNodeID = new BigInteger(myNodeID, 16);
+      BigInteger two = BigInteger.valueOf(2);
+      for(int i=0; i<Hashm;i++){
+        String affectKey = BImyNodeID.subtract(two.pow(i-1)).toString(16);
         String affectedNodeInfo = handler.find_predeccessor_ByKey(affectKey);
         String[] affectedNodeInfoList = affectedNodeInfo.split(":");
         try {
@@ -181,7 +187,9 @@ public class Node {
 
 
     // Info: myNodeMD5:tarAddr:tarPort:tarNodeMD5
-    public String CorrectContactInfo(String Info){
+    public static String CorrectContactInfo(String Info){
+      String ContactInfo[] = Info.split(":");
+      String correctTarInfo = "This is not right! correct contact info failed!!!!";
       try {
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
           TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
@@ -191,19 +199,20 @@ public class Node {
           transport.open();
 
           // as client reach to other nodes to get information back.
-          String[] ContactInfo = Info.split(":");
+          // String[] ContactInfo = Info.split(":");
 
           // ContactInfo[0]: myNodeMD5; ContactInfo[3]: tarNodeMD5; passedZero: false;
-          return client.find_successor_ByKey(ContactInfo[0], ContactInfo[3], false);
+          correctTarInfo = client.find_successor_ByKey(ContactInfo[0]);
 
       } catch(TException e) {
 
       }
+      return correctTarInfo;
     }
 
     // Info: myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
     // output: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
-    public String ContactOtherNode(String Info){
+    public static String ContactOtherNode(String Info){
       String[] ContactInfo = Info.split(":");
       // String myID = ContactInfo[0];
       // String hostname = ContactInfo[1];
@@ -211,7 +220,7 @@ public class Node {
       // String ContactNodeID = ContactInfo[3];
       // String myIP = ContactInfo[4];
       // String myPort = ContactInfo[5];
-
+      String myPartialDHTdata = "This is not right! Contact correct node failed!!";
 
       try {
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
@@ -225,10 +234,11 @@ public class Node {
 
           // input: myIP:myPort:myID
           // output: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
-          return client.UpdateDHT(ContactInfo[4]+":"+ContactInfo[5]+":"+ContactInfo[0]);
+          myPartialDHTdata = client.UpdateDHT(ContactInfo[4]+":"+ContactInfo[5]+":"+ContactInfo[0]);
 
       } catch(TException e) {
 
       }
+      return myPartialDHTdata;
     }
 }

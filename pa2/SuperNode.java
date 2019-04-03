@@ -33,7 +33,7 @@ public class SuperNode {
         }
     }
 
-    public static void simple(CheckDir.Processor processor, int port) {
+    public static void simple(WorkWithSuperNode.Processor processor, int port) {
         try {
             TServerTransport serverTransport = new TServerSocket(port);
             TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));

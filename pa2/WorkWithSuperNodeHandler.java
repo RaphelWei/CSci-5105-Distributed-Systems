@@ -6,15 +6,14 @@ import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSSLTransportFactory.TSSLTransportParameters;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-// import java.io.*;
-// import java.util.*;
-// import java.util.regex.Matcher;
-// import java.util.regex.Pattern;
-// import java.io.File;
-// import java.util.Map;
-// import java.util.HashMap;
-// import java.util.Iterator;
-// import java.util.concurrent.*;
+
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
 
 public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
 {
@@ -27,8 +26,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
 
 // main!!!!!!!!!!!!!!!!!!!
 
-  @Override
-  private Void setNumNode(int n){
+  public void setNumNode(int n){
     NumNode=n;
   }
   @Override
@@ -68,11 +66,14 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   }
 	public void PostJoin(String IP, String Port){
     synchronized (this) {
-        Joining=false;
+        String[] JoiningNodeInfo = NodeRecords.get(nodeIdx).split(":");
+        if(JoiningNodeInfo[0].equals(IP)&&JoiningNodeInfo[1].equals(Port)){
+          Joining=false;
+        }
     }
   }
 	public String GetNode(){
-
+    return "god! I haven't implement this!!!!!";
   }
 
   public static String getMd5(String input)
