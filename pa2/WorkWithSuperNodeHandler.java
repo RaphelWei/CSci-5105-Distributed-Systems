@@ -33,11 +33,14 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   }
 
   public String Join(String IP, String Port){
-    if(Joining){
-      return "NACK0|Some other node is joining. Please wait...";
+    synchronized (this) {
+        if(Joining){
+          return "NACK0|Some other node is joining. Please wait...";
+        }
+
+        Joining=true;
     }
 
-    Joining=true;// race!!!!!!!!!!!!!!
     if(nodeIdx>=NumNode){// We have reach the max number of nodes.
       Joining=false;
       return "NACK1|We have reach the max number of nodes.";
@@ -54,16 +57,19 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     Random r = new Random();
     // int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx) + 1);!!!!!!!!!!!!!!!!!!!!!!!!!
     nodeIdx = nodeIdx+1;
-    int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx));
+    int ContactNodeIdx = r.nextInt((nodeIdx));// random int among [0,nodeIdx)
 
     String NodeMD5 = getMd5(IP+Port);
+    // the record for the new node:  <nodeIdx, IP:Port:NodeMD5>
     NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
-    // ACK|nodeID:IP:Port:ContactNodeID
+    // ACK|newNodeMD5:ContactNodeIP:ContactNodePort:ContactNodeMD5
     return "ACK|"+NodeMD5+":"+NodeRecords.get(ContactNodeIdx);
 
   }
 	public void PostJoin(String IP, String Port){
-
+    synchronized (this) {
+        Joining=false;
+    }
   }
 	public String GetNode(){
 

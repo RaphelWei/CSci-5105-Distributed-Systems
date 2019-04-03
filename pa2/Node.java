@@ -28,7 +28,7 @@ public class Node {
         try {
             String myIP = args[0];
             String myPort = args[1];
-            String HashLength = args[2]; //128
+            String m = args[2]; //128
             String SNIP = args[3];
             String SNPort = args[4];
 
@@ -57,12 +57,15 @@ public class Node {
                 System.out.println("terminating");
                 return;
               } else if(retparts[0].equals("done")){
+                // I am the first node joining the system.
                 // String[] ContactInfo = retparts[1].split(":");
                 handler.setNodeID(retparts[1]);
                 handler.setmyInfo(myIP+":"+myPort+":"+retparts[1]);
+                // my predecessor is me.
                 handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
+                // all my fingers point to me.
                 String fingerTable = myIP+":"+myPort+":"+retparts[1];
-                For(int i = 1; i<Integer.parseInt(HashLength); i++){
+                For(int i = 1; i<Integer.parseInt(m); i++){
                   fingerTable=fingerTable+"|"myIP+":"+myPort+":"+retparts[1];
                 }
                 handler.setfingerTable(fingerTable);
@@ -73,53 +76,86 @@ public class Node {
                 handler.setNodeID(ContactInfo[0]);
                 handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
 
-                // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
-                // this not will be my successor.
-                //myNodeMD5:tarAddr:tarPort:tarNodeMD5
-                String CorrectedContactInfo = ContactInfo[0]+":"+CorrectContactInfo(retparts[1]);
+                // find the correct node to contact (get the contact info of the node with ID right after mine.)
+                // this node will be my successor.
+                // retparts[1]: myNodeMD5:tarAddr:tarPort:tarNodeMD5
+                // CorrectedContactInfo: myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange
+                String correctTarInfo = CorrectContactInfo(retparts[1]);
+                String CorrectedContactInfo = ContactInfo[0]+":"+correctTarInfo;
 
                 // actual contact (update DHT)
-                // myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
+                // myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange:myIP:myPort
+                // myPartialDHTdata: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
                 String myPartialDHTdata = ContactOtherNode(CorrectedContactInfo+":"+myIP+":"+myPort);
-                // predecessor, successor, keyRange
                 String[] myPartialDHTdataList = myPartialDHTdata.split("&");
                 handler.setpredecessorInfo(myPartialDHTdataList[0]);
                 handler.setKeyRange(myPartialDHTdataList[2]);
 
-                // in joinin process,
+                // in joining process,
                 // now new node got fingertable of its succcessor;
-                // next I need to update the node's finger table right before the new node.
+                // next I need to update the node's finger table right before the new node. // this has been done by the CorrectedContact node
                 // next I may be able to use find successor to update all finger data.
+
+                BigInteger two = new BigInteger(2);
+                BigInteger maxMD5 = two.pow(128);
 
                 String fingertable = myPartialDHTdataList[1];
                 String[] Fingers = fingertable.split("|");
                 BigInteger myNodeID = new BigInteger(ContactInfo[0], 16);
-                for(int i = 0; i<Fingers.legnth; i++){
+                String myfingerTable = correctTarInfo;
+                for(int i = 1; i<Fingers.legnth; i++){
 
                   // String[] FingerInfo1 = Fingers[i].split(":");
                   // BigInteger BIFI1 = new BigInteger(FingerInfo1[2], 16);
                   // String[] FingerInfo2 = Fingers[i-1].split(":");
                   // BigInteger BIFI2 = new BigInteger(FingerInfo2[2], 16);
                   // if(BIFI1.compareTo(BIFI2))
-                  BigInteger two = new BigInteger(2);
-                  BigInteger maxMD5 = two.pow(128);
-                  String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
-                  String handler.find_successor_ByKey(finger_start);
-                }
 
-                handler.setfingerTable(myPartialDHTdataList[1]);
-                // update others
+                  // !!!!!!!!!!!!!!!!!
+                  // one possible problem may be some of my finger.start, e.g the last finger.start is after my predecessor. Then its successor becomes my successor as no other nodes has my information
+                  // this may not happen as we are looking for predecessors and then to find successor at each find_successor_ByKey step. and at this point my predecessor has know my infomation (i.e the first finger).
+
+                  String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
+                  String finger = handler.find_successor_ByKey(finger_start);
+                  myfingerTable = myfingerTable+"|"+finger;
+                }
+                handler.setfingerTable(myfingerTable);
+                UpdateOthers();
+/////////////////////////////////
                 break;
               }
             }
 
             // as a server
+            Runnable simple = new Runnable() {
+                public void run() {
+                  // System.out.println(args[0]);
+                    simple(processor, Integer.parseInt(args[2]));
+                }
+            };
+
+            new Thread(simple).start();
+
 
         } catch(TException e) {
 
         }
 
     }
+
+    public static void simple(WorkWithNode.Processor processor, int port) {
+        try {
+            TServerTransport serverTransport = new TServerSocket(port);
+            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
+            server.serve();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
     public Void UpdateOthers(String[] Fingers, BigInteger myNodeID){
       BigInteger two = new BigInteger(2);
       for(int i=0; i<Fingers.length;i++){
@@ -134,7 +170,7 @@ public class Node {
             //Try to connect
             transport.open();
 
-            client.UpdateFingerTable(myNodeID.toString(16), Integer.toString(i));
+            client.UpdateFingerTable(handler.getmyInfo()+"|"+handler.getRange(), Integer.toString(i));
 
         } catch(TException e) {
 
@@ -144,7 +180,7 @@ public class Node {
     }
 
 
-
+    // Info: myNodeMD5:tarAddr:tarPort:tarNodeMD5
     public String CorrectContactInfo(String Info){
       try {
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
@@ -156,8 +192,8 @@ public class Node {
 
           // as client reach to other nodes to get information back.
           String[] ContactInfo = Info.split(":");
-          // if(ContactInfo)
 
+          // ContactInfo[0]: myNodeMD5; ContactInfo[3]: tarNodeMD5; passedZero: false;
           return client.find_successor_ByKey(ContactInfo[0], ContactInfo[3], false);
 
       } catch(TException e) {
@@ -165,7 +201,8 @@ public class Node {
       }
     }
 
-    // myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
+    // Info: myID:tarIP:tarPort:tarNodeMD5:myIP:myPort
+    // output: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
     public String ContactOtherNode(String Info){
       String[] ContactInfo = Info.split(":");
       // String myID = ContactInfo[0];
@@ -186,7 +223,8 @@ public class Node {
 
           // as client reach to other nodes to get information back.
 
-          // myIP:myPort:myID
+          // input: myIP:myPort:myID
+          // output: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
           return client.UpdateDHT(ContactInfo[4]+":"+ContactInfo[5]+":"+ContactInfo[0]);
 
       } catch(TException e) {
