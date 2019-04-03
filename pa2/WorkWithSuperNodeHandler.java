@@ -28,10 +28,10 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
 // main!!!!!!!!!!!!!!!!!!!
 
   @Override
-  private void setNumNode(int n){
+  private Void setNumNode(int n){
     NumNode=n;
   }
-
+  @Override
   public String Join(String IP, String Port){
     synchronized (this) {
         if(Joining){
