@@ -25,6 +25,8 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   // nodeIDx, hostname:Port:NodeMD5
   private Map<Integer, String> NodeRecords = new HashMap<Integer, String>();
 
+// main!!!!!!!!!!!!!!!!!!!
+
   @Override
   private void setNumNode(int n){
     NumNode=n;
@@ -35,7 +37,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
       return "NACK0|Some other node is joining. Please wait...";
     }
 
-    Joining=true;
+    Joining=true;// race!!!!!!!!!!!!!!
     if(nodeIdx>=NumNode){// We have reach the max number of nodes.
       Joining=false;
       return "NACK1|We have reach the max number of nodes.";
@@ -50,8 +52,10 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     }
 
     Random r = new Random();
-    int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx) + 1);
+    // int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx) + 1);!!!!!!!!!!!!!!!!!!!!!!!!!
     nodeIdx = nodeIdx+1;
+    int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx));
+
     String NodeMD5 = getMd5(IP+Port);
     NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
     // ACK|nodeID:IP:Port:ContactNodeID

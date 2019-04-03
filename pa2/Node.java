@@ -28,7 +28,12 @@ public class Node {
         try {
             String myIP = args[0];
             String myPort = args[1];
-            TTransport  transport = new TSocket(myIP, Integer.parseInt(myPort));
+            String HashLength = args[2]; //128
+            String SNIP = args[3];
+            String SNPort = args[4];
+
+            // SN IP may be hard coded
+            TTransport  transport = new TSocket(SNIP, Integer.parseInt(SNPort));
             TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
             WorkWithSuperNode.Client client = new WorkWithSuperNode.Client(protocol);
 
@@ -53,17 +58,19 @@ public class Node {
                 return;
               } else if(retparts[0].equals("done")){
                 // String[] ContactInfo = retparts[1].split(":");
-                handler.setNodeID(Integer.parseInt(retparts[1]));
+                handler.setNodeID(retparts[1]);
                 handler.setmyInfo(myIP+":"+myPort+":"+retparts[1]);
                 handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                // TODO:set fingertable
-                // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                String fingerTable = myIP+":"+myPort+":"+retparts[1];
+                For(int i = 1; i<Integer.parseInt(HashLength); i++){
+                  fingerTable=fingerTable+"|"myIP+":"+myPort+":"+retparts[1];
+                }
+                handler.setfingerTable(fingerTable);
                 break;
               } else if(retparts[0].equals("ACK")){
                 //myNodeMD5:tarAddr:tarPort:tarNodeMD5
                 String[] ContactInfo = retparts[1].split(":");
-                handler.setNodeID(Integer.parseInt(ContactInfo[0]));
+                handler.setNodeID(ContactInfo[0]);
                 handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
 
                 // find the correct node to contact (get the contact info of the node with ID right after the one I got.)
@@ -86,19 +93,22 @@ public class Node {
 
                 String fingertable = myPartialDHTdataList[1];
                 String[] Fingers = fingertable.split("|");
+                BigInteger myNodeID = new BigInteger(ContactInfo[0], 16);
                 for(int i = 0; i<Fingers.legnth; i++){
 
-                  String[] FingerInfo1 = Fingers[i].split(":");
+                  // String[] FingerInfo1 = Fingers[i].split(":");
                   // BigInteger BIFI1 = new BigInteger(FingerInfo1[2], 16);
                   // String[] FingerInfo2 = Fingers[i-1].split(":");
                   // BigInteger BIFI2 = new BigInteger(FingerInfo2[2], 16);
                   // if(BIFI1.compareTo(BIFI2))
-
-                  String handler.find_successor_ByKey(FingerInfo1[2]);
+                  BigInteger two = new BigInteger(2);
+                  BigInteger maxMD5 = two.pow(128);
+                  String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
+                  String handler.find_successor_ByKey(finger_start);
                 }
 
                 handler.setfingerTable(myPartialDHTdataList[1]);
-
+                // update others
                 break;
               }
             }
@@ -110,6 +120,31 @@ public class Node {
         }
 
     }
+    public Void UpdateOthers(String[] Fingers, BigInteger myNodeID){
+      BigInteger two = new BigInteger(2);
+      for(int i=0; i<Fingers.length;i++){
+        String affectKey = myNodeID.subtract(two.pow(i-1)).toString(16);
+        String affectedNodeInfo = handler.find_predeccessor_ByKey(affectKey);
+        String[] affectedNodeInfoList = affectedNodeInfo.split(":");
+        try {
+            TTransport  transport = new TSocket(affectedNodeInfoList[1], Integer.parseInt(affectedNodeInfoList[2]));
+            TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+            WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+
+            //Try to connect
+            transport.open();
+
+            client.UpdateFingerTable(myNodeID.toString(16), Integer.toString(i));
+
+        } catch(TException e) {
+
+        }
+
+      }
+    }
+
+
+
     public String CorrectContactInfo(String Info){
       try {
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
