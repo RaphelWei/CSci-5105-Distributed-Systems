@@ -29,13 +29,22 @@ public class Node {
     // private String[] KeyRange = {"0", "0"};
     public static void main(String [] args) {
         try {
-            handler = new WorkWithNodeHandler();
-            processor = new WorkWithNode.Processor(handler);
             String myIP = args[0];
             String myPort = args[1];
             String m = args[2]; //128
             String SNIP = args[3];
             String SNPort = args[4];
+
+            handler = new WorkWithNodeHandler();
+            processor = new WorkWithNode.Processor(handler);
+            // server setup
+            Runnable simple = new Runnable() {
+                public void run() {
+                  // System.out.println(args[0]);
+                    simple(processor, Integer.parseInt(myPort));
+                }
+            };
+            new Thread(simple).start();
 
             // SN IP may be hard coded
             TTransport  transport = new TSocket(SNIP, Integer.parseInt(SNPort));
@@ -112,20 +121,21 @@ public class Node {
             }
             client.PostJoin(myIP, myPort);
             System.out.println("finished PostJoin; I guess good to go.");
-            // as a server
-            Runnable simple = new Runnable() {
-                public void run() {
-                  // System.out.println(args[0]);
-                    simple(processor, Integer.parseInt(myPort));
-                }
-            };
+            // // as a server
+            // Runnable simple = new Runnable() {
+            //     public void run() {
+            //       // System.out.println(args[0]);
+            //         simple(processor, Integer.parseInt(myPort));
+            //     }
+            // };
 
-            new Thread(simple).start();
+            // new Thread(simple).start();
             String[] Fingers = handler.getfingerTable().split("\\|");
 
             UpdateOthers(Fingers.length, temp);
             System.out.println("finished UpdateOthers");
-            System.out.println("finished populating my finger table " + handler.getfingerTable());
+            System.out.println("my finger table has length: "+Fingers.length);
+            // System.out.println("finished populating my finger table " + handler.getfingerTable());
             // System.out.println("finished populating my keyRange     " + handler.getKeyRange());
             transport.close();
         } catch(TException e) {
@@ -137,9 +147,30 @@ public class Node {
     public static void simple(WorkWithNode.Processor processor, int port) {
       System.out.println(port);
         try {
+            // TServerTransport serverTransport = new TServerSocket(port);
+            // TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
+            // server.serve();
+
+
+            //Create Thrift server socket
             TServerTransport serverTransport = new TServerSocket(port);
-            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
+            TTransportFactory factory = new TFramedTransport.Factory();
+
+            // //Create service request handler
+            // MultiplyHandler handler = new WorkWithNodeHandler();
+            // processor = new WorkWithNode.Processor(handler);
+
+            //Set server arguments
+            TThreadPoolServer.Args args = new TThreadPoolServer.Args(serverTransport);
+            args.processor(processor);  //Set handler
+            args.transportFactory(factory);  //Set FramedTransport (for performance)
+
+            //Run server as a single thread
+            TServer server = new TThreadPoolServer(args);
             server.serve();
+
+
+
 
             // //Create Thrift server socket
             // TServerTransport serverTransport = new TServerSocket(port);
@@ -186,13 +217,14 @@ public class Node {
             //Try to connect
             transport.open();
 
-            client.UpdateFingerTable(handler.getmyInfo(), Integer.toString(i));
+            client.UpdateFingerTable(handler.getmyInfo(), Integer.toString(i), affectedNodeInfo);
             transport.close();
         } catch(TException e) {
 
         }
 
       }
+      System.out.println(handler.getfingerTable());
     }
 
 
@@ -284,11 +316,11 @@ System.out.println("after UpdateDHT");
 System.out.println("going to find_successor_ByKey");
             String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
             String finger = client.find_successor_ByKey(finger_start);
-System.out.println("left find_successor_ByKey");
+System.out.println("left find_successor_ByKey; the Succ found: "+finger);
             // System.out.println("my fingers: "+i+"   "+finger);
             myfingerTable = myfingerTable+"|"+finger;
           }
-          // System.out.println("finished populating my finger table " + myfingerTable);
+          System.out.println(myfingerTable);
           handler.setfingerTable(myfingerTable);
           transport.close();
       } catch(TException e) {

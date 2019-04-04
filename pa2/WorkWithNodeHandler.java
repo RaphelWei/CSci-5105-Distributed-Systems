@@ -125,7 +125,9 @@ System.out.println("left in HandleSuccessorOfPredecessor");
   // then we can update other nodes's finger table with existing finger table.
   // this only works for find predecessor; and I am using find predecessor right now.
   @Override
-  public void UpdateFingerTable(String SourceInfo, String affectKeyIndex){
+  public void UpdateFingerTable(String SourceInfo, String affectKeyIndex, String initAffectedNode){
+    System.out.println("inside UpdateFingerTable SourceInfo:     " + SourceInfo);
+    System.out.println("inside UpdateFingerTable affectKeyIndex: " + affectKeyIndex);
     String[] SourceInfoList = SourceInfo.split(":");
     BigInteger s = new BigInteger(SourceInfoList[2], 16);
 
@@ -143,6 +145,8 @@ System.out.println("left in HandleSuccessorOfPredecessor");
 
     if(!passingZero&&(s.compareTo(BINodeID)>=0&&s.compareTo(nodeFingeredID)<=0)||
     passingZero&&(s.compareTo(BINodeID)>=0||s.compareTo(nodeFingeredID)<=0)){
+System.out.println("got one entry to update:              "+SourceInfo);
+System.out.println("got one entry to update the index is: "+i);
       fingerTableList[i]=SourceInfo;
       fingerTable=fingerTableList[0];
       for(int t = 1; t<fingerTableList.length; t++){
@@ -152,11 +156,14 @@ System.out.println("left in HandleSuccessorOfPredecessor");
       // System.out.println();
       // System.out.println();
       // // if(affectKeyIndex.equals("127")){
-      //   System.out.println(fingerTable);
+        // System.out.println(fingerTable);
       // // }
       // System.out.println();
       // System.out.println();
 
+      if(initAffectedNode.equals(predecessorInfo)){
+        return;
+      }
 
       String[] predecessorInfoList = predecessorInfo.split(":");
       try{
@@ -165,12 +172,17 @@ System.out.println("left in HandleSuccessorOfPredecessor");
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
-        client.UpdateFingerTable(SourceInfo, affectKeyIndex);
+System.out.println("get to predecessor to update, predecessor: "+predecessorInfo);
+        client.UpdateFingerTable(SourceInfo, affectKeyIndex, initAffectedNode);
+System.out.println("return from predecessor");
         transport.close();
 
       } catch(TException e) {
       }
 
+    }
+    else{
+      System.out.println("this one entry do not need to be updated");
     }
   }
 
@@ -205,7 +217,9 @@ System.out.println("left setfingerTable");
   // randomly given an key, which may not be in the interval provided by the supernode
   // return: IP:Port:NodeID
   public String find_successor_ByKey(String key){
+System.out.println("inside find_successor_ByKey");
     String PredInfo = find_predeccessor_ByKey(key);
+System.out.println("inside find_successor_ByKey; PredInfo: "+PredInfo);
     String[] PredInfoList = PredInfo.split(":");
     String SuccInfo = "God, Will I be able to make it? I cannot find pred again!!!!!";
 
@@ -218,10 +232,11 @@ System.out.println("left setfingerTable");
       String PredFingerTable = client.getfingerTable();
       String[] PredFingers = PredFingerTable.split("\\|");
       SuccInfo = PredFingers[0];
+      System.out.println("inside find_successor_ByKey; SuccInfo: "+SuccInfo);
       transport.close();
 
     } catch(TException e) {
-      System.out.println(e);
+      e.printStackTrace();
     }
     return SuccInfo;
   }
@@ -230,7 +245,7 @@ System.out.println("left setfingerTable");
   // randomly given an key, which may not be in the interval provided by the supernode
   // return: IP:Port:NodeID
   public String find_predeccessor_ByKey(String key){
-System.out.println("inside find_predeccessor_ByKey "+NodeID);
+
     // String[] myKeyBoundaries = KeyRange.split(":");
     String[] Fingers = fingerTable.split("\\|");
     BigInteger BIkey = new BigInteger(key, 16);
@@ -238,15 +253,22 @@ System.out.println("inside find_predeccessor_ByKey "+NodeID);
     BigInteger BImySuccID = new BigInteger(mySucc[2], 16);
     BigInteger BImyNodeID = new BigInteger(NodeID, 16);
 
+    System.out.println("inside find_predeccessor_ByKey key:             "+key);
+    System.out.println("inside find_predeccessor_ByKey nodeID           "+NodeID);
+    System.out.println("inside find_predeccessor_ByKey mySucc           "+Fingers[0]);
+    System.out.println("inside find_predeccessor_ByKey key VS mySuccID: "+BIkey.compareTo(BImySuccID));
+
+
     boolean passingZero=false;
-    if(BImySuccID.compareTo(BImyNodeID)<0){
+    if(BImySuccID.compareTo(BImyNodeID)<=0){
       passingZero=true;
     }
+    System.out.println("inside find_predeccessor_ByKey passingZero      "+passingZero);
 
+    if((!passingZero&&(BIkey.compareTo(BImySuccID)>0||BIkey.compareTo(BImyNodeID)<=0))||
+    (passingZero&&BIkey.compareTo(BImySuccID)>0&&passingZero&&BIkey.compareTo(BImyNodeID)<=0)){
 
-    if((!passingZero&&BIkey.compareTo(BImySuccID)>0&&BIkey.compareTo(BImyNodeID)<=0)||
-    (passingZero&&BIkey.compareTo(BImySuccID)>0||passingZero&&BIkey.compareTo(BImyNodeID)<=0)){
-
+      System.out.println("inside find_predeccessor_ByKey: key is not between me and my succ ");
       // System.out.println("I got a guess for contact point. " + GuessContactPoint);
       String successorInfo = cloest_prceding_finger(key);// IP:Port:NodeID
       System.out.println("I got the contact point.         " + successorInfo);
@@ -263,8 +285,10 @@ System.out.println("inside find_predeccessor_ByKey "+NodeID);
         return ret;
 
       } catch(TException e) {
-        System.out.println(e);
+        e.printStackTrace();
       }
+    } else {
+      System.out.println("inside find_predeccessor_ByKey: key is between me and my succ going to return");
     }
     return myInfo;
   }
