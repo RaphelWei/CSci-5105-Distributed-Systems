@@ -178,7 +178,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
       transport.open();
 
       String fT = client.getfingerTable();
-      String[] FTList = fT.split("|",2); // split out the first finger from others
+      String[] FTList = fT.split("\\|",2); // split out the first finger from others
       fT = SourceInfo+"|"+FTList[1]; // replace the first finger.node with the new node
       client.setfingerTable(fT);
 
@@ -190,214 +190,88 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 
 
   // randomly given an key, which may not be in the interval provided by the supernode
-  @Override
-  // public String find_successor_ByKey(String key, String initID, boolean passedZero){
-  public String find_successor_ByKey(String key){
-    System.out.println("inside find successor by key");
-      String successorInfo = "This is not right! finding succcessor failed!!!!";
-      // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! do I really need this??????
-      // // I won't overshoot, as I am always looking for the predecessor node of the intended Key.
-      // // base condition 1: check if current NodeID passed the initID.
-      // // here the flag check if it is second time to check NodeID.
-      // BigInteger BIinitID = new BigInteger(initID, 16);
-      // BigInteger BINodeID = new BigInteger(NodeID, 16);
-      // if(BIinitID.compareTo(BINodeID)<=0&&passedZero){
-      //   return "NACK2|the key is not in the DHT range!";
-      // }
+  // return: IP:Port:NodeID:KeyRange
+  public String find_Successor_ByKey(String key){
+    String PredInfo = find_predeccessor_ByKey(key);
+    String PredInfoList = PredInfo.split(":"):
+    String SuccInfo = "God, Will I be able to make it? I cannot find pred again!!!!!"
+
+    try{
+      TTransport  transport = new TSocket(PredInfoList[0], Integer.parseInt(PredInfoList[1]));
+      TProtocol protocol = new TBinaryProtocol(transport);
+      WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+      //Try to connect
+      transport.open();
+      String PredFingerTable = client.getfingerTable();
+      String[] PredFingers = PredFingerTable.split("\\|");
+      SuccInfo = PredFingers[0];
+
+    } catch(TException e) {
+      System.out.println(e);
+    }
+    return SuccInfo;
+  }
 
 
-      String[] myKeyBoundaries = KeyRange.split(":");
-      String[] Fingers = fingerTable.split("\\|");
-      System.out.println("several split");
-      // get ranges between each 2 finger nodeID (including the myNodeID)
-      String[] PointedKeyBoundaries = new String[Fingers.length+1];
-      PointedKeyBoundaries[0] = NodeID;
-      System.out.println("PointedKeyBoundaries[0] "+PointedKeyBoundaries[0]);
-      for(int i = 0; i < Fingers.length; i++){
-        String[] ContactPoint = Fingers[i].split(":");
-        PointedKeyBoundaries[i+1] = ContactPoint[2];
-        System.out.println("PointedKeyBoundaries["+i+"] "+PointedKeyBoundaries[0]);
-      }
-      // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
-      String GuessContactPoint = "";// this is the cloest_prceding_finger
-      BigInteger BIkey = new BigInteger(key, 16);
-      // check if key in the range between fingers(including me)
-      // PointedKeyBoundaries: [me, ..., figure[figure.length-1]]
-      for(int i = 0; i < Fingers.length-1; i++){
+  // randomly given an key, which may not be in the interval provided by the supernode
+  // return: IP:Port:NodeID:KeyRange
+  public String find_predeccessor_ByKey(String key){
+    // String[] myKeyBoundaries = KeyRange.split(":");
+    String[] Fingers = fingerTable.split("\\|");
+    BigInteger BIkey = new BigInteger(key, 16);
+    String mySucc = Fingers[0].split(":");
+    BigInteger BImySuccID = new BigInteger(mySucc[2], 16);
+    BigInteger BImyNodeID = new BigInteger(NodeID, 16);
 
-        // !!!!!!!!!!!!!!!!!!
-        // problem may arise if higher boundary is smaller than lower boundary.
-        // it matters. it is always smaller than upper and greater than lower, but when upper boundary is smaller than lower boundary, the relationship becomes or not and.
-        BigInteger BIUB = new BigInteger(PointedKeyBoundaries[i+1], 16);
-        BigInteger BILB = new BigInteger(PointedKeyBoundaries[i], 16);
-        boolean passingZero=false;
-        if(BIUB.compareTo(BILB)<0){
-          passingZero=true;
-        }
-        System.out.println("passingZero "+passingZero);
-        System.out.println("PointedKeyBoundaries[i+1]"+PointedKeyBoundaries[i+1]);
-        System.out.println("PointedKeyBoundaries[i]  "+PointedKeyBoundaries[i]);
-        System.out.println("                         "+key);
-        // !!!!!!!!!!!!!!!!!!!!!!!
-        // somewhat to handle error if key is already in a node.
-        // !!!!!!!!!!!!!!!!!!!!!!!
+    boolean passingZero=false;
+    if(BImySucc.compareTo(BImyNodeID)<0){
+      passingZero=true;
+    }
 
-        if((!passingZero&&BIkey.compareTo(BIUB)<0&&BIkey.compareTo(BILB)>0)||
-        (passingZero&&BIkey.compareTo(BIUB)<0||passingZero&&BIkey.compareTo(BILB)>0)){
-          //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-          // loop direction; id in ranges or max boundaries in n to range
-          // this may not be an issue. I am comparing between each 2 PointedKeyBoundaries not from myNodeID to each fingers (which is done in the paper)
-          if(i==0){ // if node wanted is in the range between me and my successor
-            // base condition 2: my successor is the correct contact point.
-            System.out.println("base condition 2: my successor is the correct contact point.");
-            return Fingers[i]; //IP:Port:NodeID:KeyRange
-          }else{
-            // for i>0, found the key is between finger[i-1] and finger[i]
-            // contact that node to again call find_successor_ByKey
-            GuessContactPoint=Fingers[i-1]; //IP:Port:NodeID:KeyRange
-            System.out.println("I got a guess for contact point. " + GuessContactPoint);
-            break;
-          }
-        }
-      }
-      // check if key in the range between farthest finger and me: [figure[figure.length-1], me]
-      if(BIkey.compareTo(new BigInteger(PointedKeyBoundaries[0], 16))<0&&
-      BIkey.compareTo(new BigInteger(PointedKeyBoundaries[Fingers.length], 16))>0){
-          GuessContactPoint=Fingers[Fingers.length-1]; //IP:Port:NodeID:KeyRange
-          System.out.println("I got a guess for contact point. " + GuessContactPoint);
-      }
 
-      // no range can fit the key; there is only one node in the DHT
-      if(GuessContactPoint.equals("")){
-        return Fingers[0];
-      }
+    if((!passingZero&&BIkey.compareTo(BImySuccID)>0&&BIkey.compareTo(BImyNodeID)<=0)||
+    (passingZero&&BIkey.compareTo(BImySuccID)>0||passingZero&&BIkey.compareTo(BImyNodeID)<=0)){
 
-      // contact the GuessContactPoint (cloest_prceding_finger.node) to see its finger table.
-      String[] GuessContactPointList = GuessContactPoint.split(":");
+      System.out.println("I got a guess for contact point. " + GuessContactPoint);
+      String successorInfo = cloest_prceding_finger(key);// IP:Port:NodeID:KeyRange
+      System.out.println("I got the contact point.         " + successorInfo);
+      String successorInfoList = successorInfo.split(":");
+
       try{
-        TTransport  transport = new TSocket(GuessContactPointList[0], Integer.parseInt(GuessContactPointList[1]));
+        TTransport  transport = new TSocket(successorInfoList[0], Integer.parseInt(successorInfoList[1]));
         TProtocol protocol = new TBinaryProtocol(transport);
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
+        return client.find_predeccessor_ByKey(key);
 
-
-        // // as client reach to other nodes to get information back.
-        // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // // help base condition to make sure only check when second time current nodeID is the initID.
-        // // I won't overshoot, as I am always looking for the predecessor node of the intended Key.
-        // String[] myInfoList = myInfo.split(":");
-        //
-        // if(Integer.parseInt(ContactPoint[2])<Integer.parseInt(myInfoList[2])){
-        //   passedZero = true;
-        // }
-        // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        System.out.println("I got a guess for contact point. " + GuessContactPoint);
-        successorInfo = client.find_successor_ByKey(key);
-        System.out.println("I got the contact point.         " + successorInfo);
       } catch(TException e) {
         System.out.println(e);
       }
-      return successorInfo;
+    }
+    return myInfo+":"+KeyRange;
   }
 
-  // randomly given an ID, which is not in the interval provided by the supernode
-  @Override
-  // public String find_predeccessor_ByKey(String key, String initID, boolean passedZero){
-public String find_predeccessor_ByKey(String key){
-          String predeccessorInfo = "This is not right! finding predeccessor failed!!!!";
-          // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! do I really need this??????
-          // // I won't overshoot, as I am always looking for the predecessor node of the intended Key.
-          // // base condition 1: check if current NodeID passed the initID.
-          // // here the flag check if it is second time to check NodeID.
-          // BigInteger BIinitID = new BigInteger(initID, 16);
-          // BigInteger BINodeID = new BigInteger(NodeID, 16);
-          // if(BIinitID.compareTo(BINodeID)<=0&&passedZero){
-          //   return "NACK2|the key is not in the DHT range!";
-          // }
+  public String cloest_prceding_finger(String id){
+    BigInteger BItarID = new BigInteger(id, 16);
+    String[] Fingers = fingerTable.split("\\|");
+    for(int i=Fingers.length-1; i>=0;i--){
+      String fingerPointed = Fingers[i].split(":");
+      BigInteger BIfingerID = new BigInteger(fingerPointed[2], 16);
+      BigInteger BImyNodeID = new BigInteger(NodeID, 16);
 
+      boolean passingZero=false;
+      if(BItarID.compareTo(BImyNodeID)<0){
+        passingZero=true;
+      }
 
-          String[] myKeyBoundaries = KeyRange.split(":");
-          String[] Fingers = fingerTable.split("\\|");
-          // get ranges between each 2 finger nodeID (including the myNodeID)
-          String[] PointedKeyBoundaries = new String[Fingers.length+1];
-          PointedKeyBoundaries[0] = NodeID;
-          for(int i = 0; i < Fingers.length; i++){
-            String[] ContactPoint = Fingers[i].split(":");
-            PointedKeyBoundaries[i+1] = ContactPoint[2];
-          }
-          // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
-          String GuessContactPoint = "This should not happen! I cannot find the cloest_prceding_finger!!!";// this is the cloest_prceding_finger
-          BigInteger BIkey = new BigInteger(key, 16);
-          // check if key in the range between fingers(including me)
-          // PointedKeyBoundaries: [me, ..., figure[figure.length-1]]
-          for(int i = 0; i < Fingers.length-1; i++){
+      if((!passingZero&&BIfingerID.compareTo(BItarID)<0&&BIfinger.compareTo(BImyNodeID)>0)||
+      (passingZero&&BIfingerID.compareTo(BItarID)<0||passingZero&&BIfinger.compareTo(BImyNodeID)>0)){
+        return Fingers[i];
+      }
 
-            // !!!!!!!!!!!!!!!!!!
-            // problem may arise if higher boundary is smaller than lower boundary.
-            // it matters. it is always smaller than upper and greater than lower, but when upper boundary is smaller than lower boundary, the relationship becomes or not and.
-            BigInteger BIUB = new BigInteger(PointedKeyBoundaries[i+1], 16);
-            BigInteger BILB = new BigInteger(PointedKeyBoundaries[i], 16);
-            boolean passingZero=false;
-            if(BIUB.compareTo(BILB)<0){
-              passingZero=true;
-            }
-
-            // !!!!!!!!!!!!!!!!!!!!!!!
-            // somewhat to handle error if key is already in a node.
-            // !!!!!!!!!!!!!!!!!!!!!!!
-
-            if((!passingZero&&BIkey.compareTo(BIUB)<0&&BIkey.compareTo(BILB)>0)||
-            (passingZero&&BIkey.compareTo(BIUB)<0||passingZero&&BIkey.compareTo(BILB)>0)){
-              //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-              // loop direction; id in ranges or max boundaries in n to range
-              // this may not be an issue. I am comparing between each 2 PointedKeyBoundaries not from myNodeID to each fingers (which is done in the paper)
-              if(i==0){ // if node wanted is in the range between me and my successor
-                // base condition 2: my successor is the correct contact point.
-                return myInfo+"|"+KeyRange; //IP:Port:NodeID:KeyRange
-              }else{
-                // for i>0, found the key is between finger[i-1] and finger[i]
-                // contact that node to again call find_successor_ByKey
-                GuessContactPoint=Fingers[i-1]; //IP:Port:NodeID:KeyRange
-                break;
-              }
-            }
-          }
-          // check if key in the range between farthest finger and me: [figure[figure.length-1], me]
-          if(BIkey.compareTo(new BigInteger(PointedKeyBoundaries[0], 16))<0&&
-          BIkey.compareTo(new BigInteger(PointedKeyBoundaries[Fingers.length], 16))>0){
-              GuessContactPoint=Fingers[Fingers.length-1]; //IP:Port:NodeID:KeyRange
-          }
-
-          // no range can fit the key; there is only one node in the DHT
-          if(GuessContactPoint.equals("")){
-            return myInfo+"|"+KeyRange;
-          }
-
-          // contact the GuessContactPoint (cloest_prceding_finger.node) to see its finger table.
-          String GuessContactPointList[] = GuessContactPoint.split(":");
-          try{
-            TTransport  transport = new TSocket(GuessContactPointList[0], Integer.parseInt(GuessContactPointList[1]));
-            TProtocol protocol = new TBinaryProtocol(transport);
-            WorkWithNode.Client client = new WorkWithNode.Client(protocol);
-            //Try to connect
-            transport.open();
-
-
-            // // as client reach to other nodes to get information back.
-            // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            // // help base condition to make sure only check when second time current nodeID is the initID.
-            // // I won't overshoot, as I am always looking for the predecessor node of the intended Key.
-            // String[] myInfoList = myInfo.split(":");
-            //
-            // if(Integer.parseInt(ContactPoint[2])<Integer.parseInt(myInfoList[2])){
-            //   passedZero = true;
-            // }
-            // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-            predeccessorInfo = client.find_predeccessor_ByKey(key);
-          } catch(TException e) {
-          }
-          return predeccessorInfo;
+    }
+    return myInfo+":"+KeyRange;
   }
+
 }

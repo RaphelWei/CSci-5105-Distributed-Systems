@@ -102,51 +102,11 @@ public class Node {
 
                 // actual contact (update DHT)
                 // myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange:myIP:myPort
-                // myPartialDHTdata: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
                 ContactOtherNode(CorrectedContactInfo+":"+myIP+":"+myPort, correctTarInfo);
-                // String[] myPartialDHTdataList = myPartialDHTdata.split("&");
-                // handler.setpredecessorInfo(myPartialDHTdataList[0]);
-                // handler.setKeyRange(myPartialDHTdataList[2]);
-                //
-                // System.out.println(handler.getmyInfo());
-                // System.out.println(handler.getpredecessorInfo());
-                // System.out.println("finished linking me, my pred and my succ");
-                //
-                // // in joining process,
-                // // now new node got fingertable of its succcessor;
-                // // next I need to update the node's finger table right before the new node. // this has been done by the CorrectedContact node
-                // // next I may be able to use find successor to update all finger data.
-                //
-                // BigInteger two = BigInteger.valueOf(2);
-                // BigInteger maxMD5 = two.pow(128);
-                //
-                // String fingertable = myPartialDHTdataList[1];
-                // String[] Fingers = fingertable.split("\\|");
-                // BigInteger myNodeID = new BigInteger(ContactInfo[0], 16);
-                // String myfingerTable = correctTarInfo;
-                // for(int i = 1; i<Fingers.length; i++){
-                //
-                //   // String[] FingerInfo1 = Fingers[i].split(":");
-                //   // BigInteger BIFI1 = new BigInteger(FingerInfo1[2], 16);
-                //   // String[] FingerInfo2 = Fingers[i-1].split(":");
-                //   // BigInteger BIFI2 = new BigInteger(FingerInfo2[2], 16);
-                //   // if(BIFI1.compareTo(BIFI2))
-                //
-                //   // !!!!!!!!!!!!!!!!!
-                //   // one possible problem may be some of my finger.start, e.g the last finger.start is after my predecessor. Then its successor becomes my successor as no other nodes has my information
-                //   // this may not happen as we are looking for predecessors and then to find successor at each find_successor_ByKey step. and at this point my predecessor has know my infomation (i.e the first finger).
-                //
-                //   String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
-                //   String finger = handler.find_successor_ByKey(finger_start);
-                //   myfingerTable = myfingerTable+"|"+finger;
-                // }
-                // System.out.println("finished populating my finger table " + myfingerTable);
-                // handler.setfingerTable(myfingerTable);
 
                 String[] Fingers = handler.getfingerTable().split("\\|");
                 UpdateOthers(Fingers.length, ContactInfo[0]);
                 System.out.println("finished UpdateOthers");
-/////////////////////////////////
                 break;
               }
             }
@@ -189,7 +149,7 @@ public class Node {
       BigInteger zero = BigInteger.valueOf(0);
       BigInteger maxKey = new BigInteger("ffffffffffffffffffffffffffffffff", 16);
       for(int i=0; i<Hashm;i++){
-        Biginteger BIaffectKey = BImyNodeID.subtract(two.pow(i-1));
+        BigInteger BIaffectKey = BImyNodeID.subtract(two.pow(i));
         if(BIaffectKey.compareTo(zero)<0){
           BIaffectKey = BIaffectKey.add(maxKey);
         }
@@ -204,7 +164,7 @@ public class Node {
             //Try to connect
             transport.open();
 
-            client.UpdateFingerTable(handler.getmyInfo()+"|"+handler.getRange(), Integer.toString(i));
+            client.UpdateFingerTable(handler.getmyInfo()+":"+handler.getRange(), Integer.toString(i));
 
         } catch(TException e) {
 
@@ -234,6 +194,7 @@ public class Node {
 
           // ContactInfo[0]: myNodeMD5; ContactInfo[3]: tarNodeMD5; passedZero: false;
           System.out.println(ContactInfo[0]);
+          // correctTarInfo:IP:Port:NodeID:KeyRange
           correctTarInfo = client.find_successor_ByKey(ContactInfo[0]);
 
       } catch(TException e) {
@@ -301,7 +262,7 @@ public class Node {
 
             String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
             String finger = client.find_successor_ByKey(finger_start);
-            System.out.println("my fingers: "+i+"   "+finger);
+            // System.out.println("my fingers: "+i+"   "+finger);
             myfingerTable = myfingerTable+"|"+finger;
           }
           System.out.println("finished populating my finger table " + myfingerTable);
