@@ -19,6 +19,7 @@ public class SuperNode {
             handler = new WorkWithSuperNodeHandler();
             processor = new WorkWithSuperNode.Processor(handler);
             System.out.println(args[0]);
+            System.out.println(args[1]);
             handler.setNumNode(Integer.parseInt(args[1]));
             Runnable simple = new Runnable() {
                 public void run() {

@@ -36,6 +36,9 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   public void setpredecessorInfo(String Info){
     predecessorInfo=Info;
   }
+  public String getpredecessorInfo(){
+    return predecessorInfo;
+  }
 
   // IP:port:nodeID
   private String myInfo;
@@ -129,7 +132,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     BigInteger BINodeID = new BigInteger(NodeID, 16);
 
     int i = Integer.parseInt(affectKeyIndex);
-    String[] fingerTableList = fingerTable.split("|");
+    String[] fingerTableList = fingerTable.split("\\|");
     String[] nodeFingered = fingerTableList[i].split(":");
     BigInteger nodeFingeredID = new BigInteger(nodeFingered[2], 16);
 
@@ -150,7 +153,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
       String[] predecessorInfoList = predecessorInfo.split(":");
       try{
         TTransport  transport = new TSocket(predecessorInfoList[0], Integer.parseInt(predecessorInfoList[1]));
-        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        TProtocol protocol = new TBinaryProtocol(transport);
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
@@ -169,7 +172,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     String[] predecessorInfoList = predecessorInfo.split(":");
     try{
       TTransport  transport = new TSocket(predecessorInfoList[0], Integer.parseInt(predecessorInfoList[1]));
-      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      TProtocol protocol = new TBinaryProtocol(transport);
       WorkWithNode.Client client = new WorkWithNode.Client(protocol);
       //Try to connect
       transport.open();
@@ -190,6 +193,7 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   @Override
   // public String find_successor_ByKey(String key, String initID, boolean passedZero){
   public String find_successor_ByKey(String key){
+    System.out.println("inside find successor by key");
       String successorInfo = "This is not right! finding succcessor failed!!!!";
       // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! do I really need this??????
       // // I won't overshoot, as I am always looking for the predecessor node of the intended Key.
@@ -203,16 +207,19 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 
 
       String[] myKeyBoundaries = KeyRange.split(":");
-      String[] Fingers = fingerTable.split("|");
+      String[] Fingers = fingerTable.split("\\|");
+      System.out.println("several split");
       // get ranges between each 2 finger nodeID (including the myNodeID)
       String[] PointedKeyBoundaries = new String[Fingers.length+1];
       PointedKeyBoundaries[0] = NodeID;
+      System.out.println("PointedKeyBoundaries[0] "+PointedKeyBoundaries[0]);
       for(int i = 0; i < Fingers.length; i++){
         String[] ContactPoint = Fingers[i].split(":");
         PointedKeyBoundaries[i+1] = ContactPoint[2];
+        System.out.println("PointedKeyBoundaries["+i+"] "+PointedKeyBoundaries[0]);
       }
       // find the finger pointing(including the nodeID of current node) to the node before the node wanted.
-      String GuessContactPoint = "This should not happen! I cannot find the cloest_prceding_finger!!!";// this is the cloest_prceding_finger
+      String GuessContactPoint = "";// this is the cloest_prceding_finger
       BigInteger BIkey = new BigInteger(key, 16);
       // check if key in the range between fingers(including me)
       // PointedKeyBoundaries: [me, ..., figure[figure.length-1]]
@@ -227,7 +234,10 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
         if(BIUB.compareTo(BILB)<0){
           passingZero=true;
         }
-
+        System.out.println("passingZero "+passingZero);
+        System.out.println("PointedKeyBoundaries[i+1]"+PointedKeyBoundaries[i+1]);
+        System.out.println("PointedKeyBoundaries[i]  "+PointedKeyBoundaries[i]);
+        System.out.println("                         "+key);
         // !!!!!!!!!!!!!!!!!!!!!!!
         // somewhat to handle error if key is already in a node.
         // !!!!!!!!!!!!!!!!!!!!!!!
@@ -239,11 +249,13 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
           // this may not be an issue. I am comparing between each 2 PointedKeyBoundaries not from myNodeID to each fingers (which is done in the paper)
           if(i==0){ // if node wanted is in the range between me and my successor
             // base condition 2: my successor is the correct contact point.
+            System.out.println("base condition 2: my successor is the correct contact point.");
             return Fingers[i]; //IP:Port:NodeID:KeyRange
           }else{
             // for i>0, found the key is between finger[i-1] and finger[i]
             // contact that node to again call find_successor_ByKey
             GuessContactPoint=Fingers[i-1]; //IP:Port:NodeID:KeyRange
+            System.out.println("I got a guess for contact point. " + GuessContactPoint);
             break;
           }
         }
@@ -252,13 +264,19 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
       if(BIkey.compareTo(new BigInteger(PointedKeyBoundaries[0], 16))<0&&
       BIkey.compareTo(new BigInteger(PointedKeyBoundaries[Fingers.length], 16))>0){
           GuessContactPoint=Fingers[Fingers.length-1]; //IP:Port:NodeID:KeyRange
+          System.out.println("I got a guess for contact point. " + GuessContactPoint);
+      }
+
+      // no range can fit the key; there is only one node in the DHT
+      if(GuessContactPoint.equals("")){
+        return Fingers[0];
       }
 
       // contact the GuessContactPoint (cloest_prceding_finger.node) to see its finger table.
       String[] GuessContactPointList = GuessContactPoint.split(":");
       try{
         TTransport  transport = new TSocket(GuessContactPointList[0], Integer.parseInt(GuessContactPointList[1]));
-        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        TProtocol protocol = new TBinaryProtocol(transport);
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
@@ -274,9 +292,11 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
         //   passedZero = true;
         // }
         // // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+        System.out.println("I got a guess for contact point. " + GuessContactPoint);
         successorInfo = client.find_successor_ByKey(key);
+        System.out.println("I got the contact point.         " + successorInfo);
       } catch(TException e) {
+        System.out.println(e);
       }
       return successorInfo;
   }
@@ -298,7 +318,7 @@ public String find_predeccessor_ByKey(String key){
 
 
           String[] myKeyBoundaries = KeyRange.split(":");
-          String[] Fingers = fingerTable.split("|");
+          String[] Fingers = fingerTable.split("\\|");
           // get ranges between each 2 finger nodeID (including the myNodeID)
           String[] PointedKeyBoundaries = new String[Fingers.length+1];
           PointedKeyBoundaries[0] = NodeID;
@@ -349,11 +369,16 @@ public String find_predeccessor_ByKey(String key){
               GuessContactPoint=Fingers[Fingers.length-1]; //IP:Port:NodeID:KeyRange
           }
 
+          // no range can fit the key; there is only one node in the DHT
+          if(GuessContactPoint.equals("")){
+            return myInfo+"|"+KeyRange;
+          }
+
           // contact the GuessContactPoint (cloest_prceding_finger.node) to see its finger table.
           String GuessContactPointList[] = GuessContactPoint.split(":");
           try{
             TTransport  transport = new TSocket(GuessContactPointList[0], Integer.parseInt(GuessContactPointList[1]));
-            TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+            TProtocol protocol = new TBinaryProtocol(transport);
             WorkWithNode.Client client = new WorkWithNode.Client(protocol);
             //Try to connect
             transport.open();

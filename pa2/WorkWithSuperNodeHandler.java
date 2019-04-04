@@ -31,26 +31,35 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
   }
   @Override
   public String Join(String IP, String Port){
+    System.out.println(Joining);
     synchronized (this) {
         if(Joining){
+          System.out.println("others Joining");
           return "NACK0|Some other node is joining. Please wait...";
         }
-
+        System.out.println("I am Joining");
         Joining=true;
     }
 
     if(nodeIdx>=NumNode){// We have reach the max number of nodes.
+      System.out.println("We have reach the max number of nodes");
       Joining=false;
       return "NACK1|We have reach the max number of nodes.";
     }
 
     if(NodeRecords.isEmpty()){ // This is the first node.
+      System.out.println("This is the first node.");
       nodeIdx=nodeIdx+1;
       String NodeMD5 = getMd5(IP+Port);
       NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
+      System.out.println(nodeIdx);
+      System.out.println(IP+":"+Port+":"+NodeMD5);
+      System.out.println("first node returning");
       Joining=false;
       return "done|"+getMd5(IP+Port);
     }
+
+    System.out.println("I am not the first one!");
 
     Random r = new Random();
     // int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx) + 1);!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -60,17 +69,28 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
     String NodeMD5 = getMd5(IP+Port);
     // the record for the new node:  <nodeIdx, IP:Port:NodeMD5>
     NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
+
+    System.out.println(nodeIdx);
+    System.out.println(IP+":"+Port+":"+NodeMD5);
+    System.out.println("not first node is now able to return");
+
     // ACK|newNodeMD5:ContactNodeIP:ContactNodePort:ContactNodeMD5
     return "ACK|"+NodeMD5+":"+NodeRecords.get(ContactNodeIdx);
 
   }
 	public void PostJoin(String IP, String Port){
+    System.out.println("PostJoin");
     synchronized (this) {
+      System.out.println("checking I am the joining node");
+
         String[] JoiningNodeInfo = NodeRecords.get(nodeIdx).split(":");
         if(JoiningNodeInfo[0].equals(IP)&&JoiningNodeInfo[1].equals(Port)){
+          System.out.println("releasing lock");
           Joining=false;
         }
+        System.out.println();
     }
+    System.out.println("leaving Post Join");
   }
 	public String GetNode(){
     return "god! I haven't implement this!!!!!";
