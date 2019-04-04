@@ -19,13 +19,16 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 {
   // each "server", node, has a handler in its object.
   // range update!!!!!!!!!!!!!!!
-  private String KeyRange = "0:"+"ffffffffffffffffffffffffffffffff";// init to 0 to maximum of MD5
+  // private String KeyRange = "0:"+"ffffffffffffffffffffffffffffffff";// init to 0 to maximum of MD5
   private NavigableMap<String, String> records = new TreeMap<>();
   private String NodeID;
 
-  public void setKeyRange(String Range){
-    KeyRange = Range;
-  }
+  // public void setKeyRange(String Range){
+  //   KeyRange = Range;
+  // }
+  // public String getKeyRange(){
+  //   return KeyRange;
+  // }
 
   public void setNodeID(String MyID){
     NodeID = MyID;
@@ -77,10 +80,10 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     // Using String to represent MD5 code.
     // need BigInteger(md5, 16) to get numeric operations.
     //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+System.out.println("inside UpdateDHT");
     // find the second half
 
-    String[] keyBoundaries =  KeyRange.split(":");
+    // String[] keyBoundaries =  KeyRange.split(":");
     // !!!!!!!!!!!!!!!!!!!!!
     // I won't need to get a half of key range; instead, I want to divide my key range by the key of the new node.
     // BigInteger hBI= new BigInteger(keyBoundaries[0], 16);
@@ -93,23 +96,20 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     String premiddleKey = BImiddleKey.subtract(BigInteger.valueOf(1)).toString(16);// new node's NodeMD5 - 1
     String pairset;
 
-    KeyRange=middleKey+":"+keyBoundaries[1];
+    // KeyRange=middleKey+":"+keyBoundaries[1];
     // predecessor&fingerTable(the first one is successor)&newNode's keyRange
-    String ret = predecessorInfo+"&"+fingerTable+"&"+keyBoundaries[0]+":"+premiddleKey;
-
+    String ret = predecessorInfo+"&"+fingerTable;
+System.out.println("jumpping in HandleSuccessorOfPredecessor");
     // SourceInfo: sourceIP:sourcePort:sourceID
     // predecessorInfo: IP:port:nodeID
     // updating my predecessor's successor information
     HandleSuccessorOfPredecessor(SourceInfo, predecessorInfo);
-
+System.out.println("left in HandleSuccessorOfPredecessor");
     // updating my predecessorInfo to be the new node
     predecessorInfo = SourceInfo;
     return ret;
   }
 
-  public String getRange(){
-    return KeyRange;
-  }
 
   // //wantedNodeMD5:tarAddr:tarPort:tarNodeMD5:wantedIP:wantedPort
   // public String CorrectContactInfo(String InitContactInfo){
@@ -145,19 +145,28 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     passingZero&&(s.compareTo(BINodeID)>=0||s.compareTo(nodeFingeredID)<=0)){
       fingerTableList[i]=SourceInfo;
       fingerTable=fingerTableList[0];
-      for(int t = 1; i<fingerTableList.length; i++){
+      for(int t = 1; t<fingerTableList.length; t++){
         fingerTable=fingerTable+"|"+fingerTableList[t];
       }
+      // System.out.println();
+      // System.out.println();
+      // System.out.println();
+      // // if(affectKeyIndex.equals("127")){
+      //   System.out.println(fingerTable);
+      // // }
+      // System.out.println();
+      // System.out.println();
 
 
       String[] predecessorInfoList = predecessorInfo.split(":");
       try{
         TTransport  transport = new TSocket(predecessorInfoList[0], Integer.parseInt(predecessorInfoList[1]));
-        TProtocol protocol = new TBinaryProtocol(transport);
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
         client.UpdateFingerTable(SourceInfo, affectKeyIndex);
+        transport.close();
 
       } catch(TException e) {
       }
@@ -169,19 +178,23 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
   // predecessorInfo: IP:port:nodeID
   // let my predecessor's successor be the new node
   public void HandleSuccessorOfPredecessor(String SourceInfo, String predecessorInfo){
+    System.out.println("inside HandleSuccessorOfPredecessor");
     String[] predecessorInfoList = predecessorInfo.split(":");
     try{
       TTransport  transport = new TSocket(predecessorInfoList[0], Integer.parseInt(predecessorInfoList[1]));
-      TProtocol protocol = new TBinaryProtocol(transport);
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
       WorkWithNode.Client client = new WorkWithNode.Client(protocol);
       //Try to connect
       transport.open();
-
+System.out.println("going in getfingerTable");
       String fT = client.getfingerTable();
+System.out.println("left getfingerTable");
       String[] FTList = fT.split("\\|",2); // split out the first finger from others
       fT = SourceInfo+"|"+FTList[1]; // replace the first finger.node with the new node
+System.out.println("going in  setfingerTable");
       client.setfingerTable(fT);
-
+System.out.println("left setfingerTable");
+      transport.close();
 
 
     } catch(TException e) {
@@ -190,21 +203,22 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 
 
   // randomly given an key, which may not be in the interval provided by the supernode
-  // return: IP:Port:NodeID:KeyRange
-  public String find_Successor_ByKey(String key){
+  // return: IP:Port:NodeID
+  public String find_successor_ByKey(String key){
     String PredInfo = find_predeccessor_ByKey(key);
-    String PredInfoList = PredInfo.split(":"):
-    String SuccInfo = "God, Will I be able to make it? I cannot find pred again!!!!!"
+    String[] PredInfoList = PredInfo.split(":");
+    String SuccInfo = "God, Will I be able to make it? I cannot find pred again!!!!!";
 
     try{
       TTransport  transport = new TSocket(PredInfoList[0], Integer.parseInt(PredInfoList[1]));
-      TProtocol protocol = new TBinaryProtocol(transport);
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
       WorkWithNode.Client client = new WorkWithNode.Client(protocol);
       //Try to connect
       transport.open();
       String PredFingerTable = client.getfingerTable();
       String[] PredFingers = PredFingerTable.split("\\|");
       SuccInfo = PredFingers[0];
+      transport.close();
 
     } catch(TException e) {
       System.out.println(e);
@@ -214,17 +228,18 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 
 
   // randomly given an key, which may not be in the interval provided by the supernode
-  // return: IP:Port:NodeID:KeyRange
+  // return: IP:Port:NodeID
   public String find_predeccessor_ByKey(String key){
+System.out.println("inside find_predeccessor_ByKey "+NodeID);
     // String[] myKeyBoundaries = KeyRange.split(":");
     String[] Fingers = fingerTable.split("\\|");
     BigInteger BIkey = new BigInteger(key, 16);
-    String mySucc = Fingers[0].split(":");
+    String[] mySucc = Fingers[0].split(":");
     BigInteger BImySuccID = new BigInteger(mySucc[2], 16);
     BigInteger BImyNodeID = new BigInteger(NodeID, 16);
 
     boolean passingZero=false;
-    if(BImySucc.compareTo(BImyNodeID)<0){
+    if(BImySuccID.compareTo(BImyNodeID)<0){
       passingZero=true;
     }
 
@@ -232,31 +247,33 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
     if((!passingZero&&BIkey.compareTo(BImySuccID)>0&&BIkey.compareTo(BImyNodeID)<=0)||
     (passingZero&&BIkey.compareTo(BImySuccID)>0||passingZero&&BIkey.compareTo(BImyNodeID)<=0)){
 
-      System.out.println("I got a guess for contact point. " + GuessContactPoint);
-      String successorInfo = cloest_prceding_finger(key);// IP:Port:NodeID:KeyRange
+      // System.out.println("I got a guess for contact point. " + GuessContactPoint);
+      String successorInfo = cloest_prceding_finger(key);// IP:Port:NodeID
       System.out.println("I got the contact point.         " + successorInfo);
-      String successorInfoList = successorInfo.split(":");
+      String[] successorInfoList = successorInfo.split(":");
 
       try{
         TTransport  transport = new TSocket(successorInfoList[0], Integer.parseInt(successorInfoList[1]));
-        TProtocol protocol = new TBinaryProtocol(transport);
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
         WorkWithNode.Client client = new WorkWithNode.Client(protocol);
         //Try to connect
         transport.open();
-        return client.find_predeccessor_ByKey(key);
+        String ret =  client.find_predeccessor_ByKey(key);
+        transport.close();
+        return ret;
 
       } catch(TException e) {
         System.out.println(e);
       }
     }
-    return myInfo+":"+KeyRange;
+    return myInfo;
   }
 
   public String cloest_prceding_finger(String id){
     BigInteger BItarID = new BigInteger(id, 16);
     String[] Fingers = fingerTable.split("\\|");
     for(int i=Fingers.length-1; i>=0;i--){
-      String fingerPointed = Fingers[i].split(":");
+      String[] fingerPointed = Fingers[i].split(":");
       BigInteger BIfingerID = new BigInteger(fingerPointed[2], 16);
       BigInteger BImyNodeID = new BigInteger(NodeID, 16);
 
@@ -265,13 +282,13 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
         passingZero=true;
       }
 
-      if((!passingZero&&BIfingerID.compareTo(BItarID)<0&&BIfinger.compareTo(BImyNodeID)>0)||
-      (passingZero&&BIfingerID.compareTo(BItarID)<0||passingZero&&BIfinger.compareTo(BImyNodeID)>0)){
+      if((!passingZero&&BIfingerID.compareTo(BItarID)<0&&BIfingerID.compareTo(BImyNodeID)>0)||
+      (passingZero&&BIfingerID.compareTo(BItarID)<0||passingZero&&BIfingerID.compareTo(BImyNodeID)>0)){
         return Fingers[i];
       }
 
     }
-    return myInfo+":"+KeyRange;
+    return myInfo;
   }
 
 }

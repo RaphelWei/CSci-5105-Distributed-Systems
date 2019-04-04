@@ -36,9 +36,22 @@ public class SuperNode {
 
     public static void simple(WorkWithSuperNode.Processor processor, int port) {
         try {
-            TServerTransport serverTransport = new TServerSocket(port);
-            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
-            server.serve();
+          //Create Thrift server socket
+          TServerTransport serverTransport = new TServerSocket(port);
+          TTransportFactory factory = new TFramedTransport.Factory();
+
+          // //Create service request handler
+          // MultiplyHandler handler = new WorkWithNodeHandler();
+          // processor = new WorkWithNode.Processor(handler);
+
+          //Set server arguments
+          TServer.Args args = new TServer.Args(serverTransport);
+          args.processor(processor);  //Set handler
+          args.transportFactory(factory);  //Set FramedTransport (for performance)
+
+          //Run server as a single thread
+          TServer server = new TSimpleServer(args);
+          server.serve();
 
         } catch (Exception e) {
             e.printStackTrace();

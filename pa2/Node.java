@@ -40,13 +40,14 @@ public class Node {
             // SN IP may be hard coded
             TTransport  transport = new TSocket(SNIP, Integer.parseInt(SNPort));
             // TTransport  transport = new TSocket("localhost", 9001);
-            TProtocol protocol = new TBinaryProtocol(transport);
+            TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
             WorkWithSuperNode.Client client = new WorkWithSuperNode.Client(protocol);
 
             //Try to connect
             transport.open();
 
             // as a client
+            String temp ="";
             while(true){
               System.out.println(args[3]);
               System.out.println(args[4]);
@@ -83,6 +84,7 @@ public class Node {
                 }
                 handler.setfingerTable(fingerTable);
                 System.out.println("I am the first node; finished!!!!!!");
+                temp = retparts[1];
                 break;
               } else if(retparts[0].equals("ACK")){
                 System.out.println("I am not the first node!!!!!");
@@ -103,10 +105,8 @@ public class Node {
                 // actual contact (update DHT)
                 // myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange:myIP:myPort
                 ContactOtherNode(CorrectedContactInfo+":"+myIP+":"+myPort, correctTarInfo);
+                temp = ContactInfo[0];
 
-                String[] Fingers = handler.getfingerTable().split("\\|");
-                UpdateOthers(Fingers.length, ContactInfo[0]);
-                System.out.println("finished UpdateOthers");
                 break;
               }
             }
@@ -121,8 +121,13 @@ public class Node {
             };
 
             new Thread(simple).start();
+            String[] Fingers = handler.getfingerTable().split("\\|");
 
-
+            UpdateOthers(Fingers.length, temp);
+            System.out.println("finished UpdateOthers");
+            System.out.println("finished populating my finger table " + handler.getfingerTable());
+            // System.out.println("finished populating my keyRange     " + handler.getKeyRange());
+            transport.close();
         } catch(TException e) {
           System.out.println(e);
         }
@@ -136,6 +141,23 @@ public class Node {
             TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
             server.serve();
 
+            // //Create Thrift server socket
+            // TServerTransport serverTransport = new TServerSocket(port);
+            // TTransportFactory factory = new TFramedTransport.Factory();
+            //
+            // // //Create service request handler
+            // // MultiplyHandler handler = new WorkWithNodeHandler();
+            // // processor = new WorkWithNode.Processor(handler);
+            //
+            // //Set server arguments
+            // TServer.Args args = new TServer.Args(serverTransport);
+            // args.processor(processor);  //Set handler
+            // args.transportFactory(factory);  //Set FramedTransport (for performance)
+            //
+            // //Run server as a single thread
+            // TServer server = new TSimpleServer(args);
+            // server.serve();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -148,7 +170,7 @@ public class Node {
       BigInteger two = BigInteger.valueOf(2);
       BigInteger zero = BigInteger.valueOf(0);
       BigInteger maxKey = new BigInteger("ffffffffffffffffffffffffffffffff", 16);
-      for(int i=0; i<Hashm;i++){
+      for(int i=0; i<Hashm; i++){
         BigInteger BIaffectKey = BImyNodeID.subtract(two.pow(i));
         if(BIaffectKey.compareTo(zero)<0){
           BIaffectKey = BIaffectKey.add(maxKey);
@@ -157,15 +179,15 @@ public class Node {
         String affectedNodeInfo = handler.find_predeccessor_ByKey(affectKey);
         String[] affectedNodeInfoList = affectedNodeInfo.split(":");
         try {
-            TTransport  transport = new TSocket(affectedNodeInfoList[1], Integer.parseInt(affectedNodeInfoList[2]));
-            TProtocol protocol = new TBinaryProtocol(transport);
+            TTransport  transport = new TSocket(affectedNodeInfoList[0], Integer.parseInt(affectedNodeInfoList[1]));
+            TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
             WorkWithNode.Client client = new WorkWithNode.Client(protocol);
-
+            System.out.println("i = "+i);
             //Try to connect
             transport.open();
 
-            client.UpdateFingerTable(handler.getmyInfo()+":"+handler.getRange(), Integer.toString(i));
-
+            client.UpdateFingerTable(handler.getmyInfo(), Integer.toString(i));
+            transport.close();
         } catch(TException e) {
 
         }
@@ -183,7 +205,7 @@ public class Node {
         System.out.println(ContactInfo[2]);
         System.out.println();
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
-          TProtocol protocol = new TBinaryProtocol(transport);
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
           WorkWithNode.Client client = new WorkWithNode.Client(protocol);
 
           //Try to connect
@@ -196,7 +218,7 @@ public class Node {
           System.out.println(ContactInfo[0]);
           // correctTarInfo:IP:Port:NodeID:KeyRange
           correctTarInfo = client.find_successor_ByKey(ContactInfo[0]);
-
+          transport.close();
       } catch(TException e) {
         e.printStackTrace();
       }
@@ -216,21 +238,21 @@ public class Node {
 
       try {
           TTransport  transport = new TSocket(ContactInfo[1], Integer.parseInt(ContactInfo[2]));
-          TProtocol protocol = new TBinaryProtocol(transport);
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
           WorkWithNode.Client client = new WorkWithNode.Client(protocol);
 
           //Try to connect
           transport.open();
 
           // as client reach to other nodes to get information back.
-
+System.out.println("be in ContactOtherNode");
           // input: myIP:myPort:myID
-          // output: tarPredecessor&tarFingerTable(the first one is successor)&myKeyRange
+          // output: tarPredecessor&tarFingerTable(the first one is successor)
           myPartialDHTdata = client.UpdateDHT(ContactInfo[4]+":"+ContactInfo[5]+":"+ContactInfo[0]);
-
+System.out.println("after UpdateDHT");
           String[] myPartialDHTdataList = myPartialDHTdata.split("&");
           handler.setpredecessorInfo(myPartialDHTdataList[0]);
-          handler.setKeyRange(myPartialDHTdataList[2]);
+          // handler.setKeyRange(myPartialDHTdataList[2]);
 
           System.out.println(handler.getmyInfo());
           System.out.println(handler.getpredecessorInfo());
@@ -259,14 +281,16 @@ public class Node {
             // !!!!!!!!!!!!!!!!!
             // one possible problem may be some of my finger.start, e.g the last finger.start is after my predecessor. Then its successor becomes my successor as no other nodes has my information
             // this may not happen as we are looking for predecessors and then to find successor at each find_successor_ByKey step. and at this point my predecessor has know my infomation (i.e the first finger).
-
+System.out.println("going to find_successor_ByKey");
             String finger_start = myNodeID.add(two.pow(i)).mod(maxMD5).toString(16);
             String finger = client.find_successor_ByKey(finger_start);
+System.out.println("left find_successor_ByKey");
             // System.out.println("my fingers: "+i+"   "+finger);
             myfingerTable = myfingerTable+"|"+finger;
           }
-          System.out.println("finished populating my finger table " + myfingerTable);
+          // System.out.println("finished populating my finger table " + myfingerTable);
           handler.setfingerTable(myfingerTable);
+          transport.close();
       } catch(TException e) {
 
       }
