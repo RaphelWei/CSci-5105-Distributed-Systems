@@ -9,7 +9,7 @@ public class Map {
     //TODO Set path
     public static String pathPositiveWords = "./data/positive.txt";
     public static String pathNegativeWords = "./data/negative.txt";
-    public static String path = "./data/input_dir/";
+    public static String path = "./data/example/";
     public static String pathOutputDir = "./data/output_dir/";
 
     /**
@@ -121,44 +121,20 @@ public class Map {
             BufferedReader br = new BufferedReader(new FileReader(filename));
             String thisline = null;
             while((thisline = br.readLine()) != null) {
-                thisline.replace("--", " ");
+                thisline = thisline.replaceAll("--", " ");
                 Matcher matcher = pattern.matcher(thisline);
                 while(matcher.find()){
                     String temp = matcher.group();
                     if (positiveWords.contains(temp.toLowerCase())) {
                         numPositiveWords++;
-//                        System.out.println(temp.toLowerCase());
                     }
 
                     if (negativeWords.contains(temp.toLowerCase())) {
                         numNegativeWords++;
-//                        System.out.println(temp.toLowerCase());
-
                     }
                 }
-//                for (String originalWord : thisline.split("\\s*\\b\\s*")) {
-//                for (String originalWord: matcher) {
-//                    String word = originalWord.toLowerCase();
-//                    if (word.isEmpty()) {
-//                        continue;
-//                    }
-//
-//                    // TODO Count "positive" words
-//                    if (positiveWords.contains(word)) {
-//                        numPositiveWords++;
-//
-//                    }
-//
-//                    // TODO Count "bad" words
-//                    if (negativeWords.contains(word)) {
-//                        numNegativeWords++;
-//                    }
-//                }
-
             }
             sentimentScore = (double)(numPositiveWords-numNegativeWords)/(numPositiveWords+numNegativeWords);
-
-
             // TODO Write in a file named "log.txt".
             BufferedWriter out = null;
             try {

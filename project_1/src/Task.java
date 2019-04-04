@@ -32,21 +32,47 @@ class Task implements Callable{
         BufferedReader br = new BufferedReader(new FileReader(filename));
         String thisline = null;
         while((thisline = br.readLine()) != null) {
-            thisline.replace("--", " ");
+            thisline = thisline.replaceAll("--", " ");
             Matcher matcher = pattern.matcher(thisline);
             while(matcher.find()){
                 String temp = matcher.group();
                 if (positiveWords.contains(temp.toLowerCase())) {
                     numPositiveWords++;
-//                        System.out.println(temp.toLowerCase());
                 }
 
                 if (negativeWords.contains(temp.toLowerCase())) {
                     numNegativeWords++;
-//                        System.out.println(temp.toLowerCase());
-
                 }
             }
+
+//                for (String originalWord: matcher) {
+//                    String word = originalWord.toLowerCase();
+//                    if (word.isEmpty()) {
+//                        continue;
+//                    }
+//
+//                    // TODO Count "positive" words
+//
+//
+//                    // TODO Count "bad" words
+//
+//                }
+
+
+//            Matcher matcher = pattern.matcher(thisline);
+//            while(matcher.find()){
+//                String temp = matcher.group();
+//                if (positiveWords.contains(temp.toLowerCase())) {
+//                    numPositiveWords++;
+//
+//                }
+//
+//                if (negativeWords.contains(temp.toLowerCase())) {
+//                    numNegativeWords++;
+//
+//
+//                }
+//            }
         }
         double sentimentScore = (double)(numPositiveWords-numNegativeWords)/(numPositiveWords+numNegativeWords);
 

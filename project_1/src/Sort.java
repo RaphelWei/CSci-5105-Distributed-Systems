@@ -60,14 +60,14 @@ public class Sort {
 //        for (Map.Entry<String, Double> t: list) {
 //            System.out.println(t.getKey()+" "+t.getValue());
 //        }
-        File outputFile = new File("./data/log.txt");
+        File outputFile = new File("./data/output.txt");
         if (outputFile.exists())
             outputFile.delete();
         BufferedWriter out = null;
         for (Map.Entry<String, Double> t:list) {
             try {
                 out = new BufferedWriter(new OutputStreamWriter(
-                        new FileOutputStream("./data/inter_output.txt", true)));
+                        new FileOutputStream("./data/output.txt", true)));
                 out.write(t.getKey()+" "+t.getValue()+"\n");
 
             } catch (Exception e) {
