@@ -13,10 +13,17 @@ import java.util.regex.Pattern;
 public class Mapper {
 
     //TODO Set path
+<<<<<<< HEAD
     public static String pathPositiveWords = "./data/positive.txt";
     public static String pathNegativeWords = "./data/negative.txt";
     public static String path = "./data/example/";
     public static String pathOutputDir = "./data/output_dir/";
+=======
+    public static String pathPositiveWords = "data/positive.txt";
+    public static String pathNegativeWords = "data/negative.txt";
+    public static String path = "data/example/";
+    public static String pathOutputDir = "data/output_dir/";
+>>>>>>> cbb5ad2831281312fde0fb6cec059f7067d45b52
 
     /**
      * Returns a list from positive.txt or negative.txt;
@@ -30,7 +37,7 @@ public class Mapper {
         InputStreamReader read = null;
         BufferedReader reader = null;
         try {
-            read = new InputStreamReader(new FileInputStream(file),"utf-8");
+            read = new InputStreamReader(new FileInputStream(file), "utf-8");
             reader = new BufferedReader(read);
             String line;
             while ((line = reader.readLine()) != null) {
@@ -65,7 +72,6 @@ public class Mapper {
     }
 
     /**
-     *
      * @param file path of the directory which contains all the input files
      * @return list of all the pathnames of input files
      */
@@ -95,14 +101,10 @@ public class Mapper {
     }
 
 
-
-
-
     public static void main(String[] args) throws IOException {
         // TODO Get The List of Sentiment words
         List positiveWords = getSentimentWords(pathPositiveWords);
         List negativeWords = getSentimentWords(pathNegativeWords);
-
 
 
         // TODO Get A List of All Input File Names
@@ -117,12 +119,11 @@ public class Mapper {
         Pattern pattern = Pattern.compile("([a-zA-Z]+\\-*)+");
 
         File outputDir = new File(pathOutputDir);
-        if (!outputDir.exists()){
+        if (!outputDir.exists()) {
             outputDir.mkdir();
-        }
-        else {
+        } else {
             File[] files = outputDir.listFiles();
-            for (int i=0; i<files.length; i++){
+            for (int i = 0; i < files.length; i++) {
                 files[i].delete();
             }
         }
@@ -133,37 +134,46 @@ public class Mapper {
         int NUM_OF_THREAD = 5;
         ExecutorService executor = Executors.newFixedThreadPool(NUM_OF_THREAD);
         List<Future<?>> futures = new ArrayList<>();
-        int iter = list.size()/NUM_OF_THREAD;
+        int iter = list.size() / NUM_OF_THREAD;
 
 
-        for (int i = 0; i<iter; i++) {
+        for (int i = 0; i < iter; i++) {
             String l = list.get(i);
             Callable t1 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
             futures.add(executor.submit(t1));
         }
-        for (int i = iter; i<iter*2; i++) {
+        for (int i = iter; i < iter * 2; i++) {
             String l = list.get(i);
             Callable t2 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
             futures.add(executor.submit(t2));
         }
-        for (int i = 2*iter; i<iter*3; i++) {
+        for (int i = 2 * iter; i < iter * 3; i++) {
             String l = list.get(i);
             Callable t3 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
             futures.add(executor.submit(t3));
         }
-        for (int i = 3*iter; i<iter*4; i++) {
+        for (int i = 3 * iter; i < iter * 4; i++) {
             String l = list.get(i);
             Callable t4 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
             futures.add(executor.submit(t4));
         }
-        for (int i = 4*iter; i<list.size(); i++) {
+        for (int i = 4 * iter; i < list.size(); i++) {
             String l = list.get(i);
             Callable t5 = new Task(pattern, l, outputDir, positiveWords, negativeWords);
             futures.add(executor.submit(t5));
         }
         executor.shutdown();
+<<<<<<< HEAD
 
 
 
     }
 }
+=======
+    }
+}
+
+
+
+
+>>>>>>> cbb5ad2831281312fde0fb6cec059f7067d45b52

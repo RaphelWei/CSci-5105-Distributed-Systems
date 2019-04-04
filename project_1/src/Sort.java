@@ -35,7 +35,7 @@ public class Sort {
 
     public static void main(String[] args) throws IOException{
 
-        String path = "./data/output_dir/";
+        String path = "data/output_dir/";
         File file = new File(path);
         List<String> outputFileList = new ArrayList<String>();
         outputFileList = getFileList(file);

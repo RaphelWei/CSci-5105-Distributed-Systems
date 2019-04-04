@@ -16,7 +16,11 @@ public class Client {
             String thisline = null;
             while ((thisline = br.readLine()) != null) {
                 String[] str = thisline.split(":");
+
+
                 map.put(str[0], str[1]);
+
+
             }
 
         } catch (IOException e) {
@@ -25,35 +29,38 @@ public class Client {
         return map;
     }
 
-    public static String lookupBook(String bookTitle) throws NoSuchAlgorithmException{
+    public static void lookupBook(String bookTitle) throws NoSuchAlgorithmException{
+        
+
+    }
+
+    public static void insertRecord(HashMap<String, String> record) {
+
+
+    }
+
+
+    public static String getHashedKey(String key) throws NoSuchAlgorithmException{
         String hashedKey = null;
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            md.update(bookTitle.getBytes());
+            md.update(key.getBytes());
             byte[] digest = md.digest();
-            hashedKey = DatatypeConverter
-                  .printHexBinary(digest).toUpperCase();
+            hashedKey = DatatypeConverter.printHexBinary(digest).toUpperCase();
         } catch (NoSuchAlgorithmException e) {
             System.err.println("No such Algorithm Exception!");
         }
         return hashedKey;
-
     }
 
-    public static void insertRecord() {
-
-    }
-
-    public static void updateGenre() {
-
+    public static void printAllNodeInfo() {
+        
     }
 
 
 
 
-
-
-
+    // args format 
     public static void main (String[] args) throws IOException, NoSuchAlgorithmException {
 
         for (;;) {
@@ -62,8 +69,8 @@ public class Client {
             System.out.println("Please specify the operation that you want this system to execute: ");
             System.out.println("Set - Setting a book title and its genre from a given file.");
             System.out.println("Get - Looking up a book title for its genre.");
-            System.out.println("Insert - Inserting a new title and genre pair to the system.");
-            System.out.println("Update - Updating the genre of an existing book.");
+            System.out.println("Insert - Inserting a new record to the system or updating the genre for a existing book.");
+            System.out.println("Print - Printing the information of all nodes.");
             System.out.println("Exit - Exiting from the system.");
             System.out.print("\n\n\n");
 
@@ -83,7 +90,7 @@ public class Client {
 
                 HashMap<String, String> map = readGivenFile(path);
                 for (Map.Entry<String, String> entry : map.entrySet()) {
-                    System.out.println(entry.getKey() + "*********************" + entry.getValue());
+                    System.out.println(getHashedKey(entry.getKey()) + "*********************" + entry.getValue());
                 }
                 System.out.print("\n");
             }
@@ -93,7 +100,7 @@ public class Client {
             else if (operation.equals("Get")) {
                 System.out.println("Please input the book title you want to look up: ");
                 String bookTitle = scan.nextLine();
-                String bookTitleMD5 = lookupBook(bookTitle);
+                String bookTitleMD5 = getHashedKey(bookTitle);
                 System.out.println(bookTitleMD5);
 
 
@@ -103,15 +110,22 @@ public class Client {
             }
 
             else if (operation.equals("Insert")) {
-                System.out.println("Please input the book title and genre pair you want to insert: ");
+                System.out.println("Please input the book title: ");
+                String bookTitle = scan.nextLine();
+                System.out.println("Please input the genre: ");
+                String genre = scan.nextLine();
+                HashMap<String, String> record = new HashMap<>();
+                //record.put(bookTitle, genre);
+
 //                String record = scan.nextLine();
 //                record = record.split();
 //                HashMap<Strin>
 
             }
 
-            else if (operation.equals("Update")) {
-
+            else if (operation.equals("Print")) {
+                System.out.println("Please in ");
+                String bookTitle = scan.nextLine();
             }
 
             else if (operation.equals("Exit")) {

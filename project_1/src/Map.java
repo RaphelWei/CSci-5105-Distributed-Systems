@@ -121,6 +121,7 @@ public class Map {
             BufferedReader br = new BufferedReader(new FileReader(filename));
             String thisline = null;
             while((thisline = br.readLine()) != null) {
+<<<<<<< HEAD
                 thisline = thisline.replaceAll("--", " ");
                 Matcher matcher = pattern.matcher(thisline);
                 while(matcher.find()){
@@ -133,6 +134,59 @@ public class Map {
                         numNegativeWords++;
                     }
                 }
+=======
+                thisline = thisline.replaceAll("--|''|\t", " ");
+                thisline = thisline.replaceAll(",|\\.|;|:|!|\\?|\\||\\[|\\]|\\(|\\)", " ");
+//                thisline = thisline.replace(',', ' ');
+//                thisline = thisline.replace('.', ' ');
+//                thisline = thisline.replace(';', ' ');
+//                thisline = thisline.replace('!', ' ');
+//                thisline = thisline.replace('?', ' ');
+//                thisline = thisline.replace('|', ' ');
+//                thisline = thisline.replace('(', ' ');
+//                thisline = thisline.replace(')', ' ');
+//                thisline = thisline.replace('[', ' ');
+//                thisline = thisline.replace(']', ' ');
+//                thisline = thisline.replace(':', ' ');
+                thisline = thisline.replaceAll(" '", " ");
+                thisline = thisline.replaceAll("^'", " ");
+                thisline = thisline.replaceAll("'", " ");
+                thisline = thisline.replaceAll("'.*? ", " ");
+                thisline = thisline.replaceAll("'.*?\n", "\n");
+
+//                Matcher matcher = pattern.matcher(thisline);
+//                while(matcher.find()){
+//                    String temp = matcher.group();
+//                    if (positiveWords.contains(temp.toLowerCase())) {
+//                        numPositiveWords++;
+////                        System.out.println(temp.toLowerCase());
+//                    }
+//
+//                    if (negativeWords.contains(temp.toLowerCase())) {
+//                        numNegativeWords++;
+////                        System.out.println(temp.toLowerCase());
+//
+//                    }
+//                }
+                for (String originalWord : thisline.split("\\s+")) {
+                    String word = originalWord.toLowerCase();
+                    if (word.isEmpty()) {
+                        continue;
+                    }
+
+                    // TODO Count "positive" words
+                    if (positiveWords.contains(word)) {
+                        numPositiveWords++;
+
+                    }
+
+                    // TODO Count "bad" words
+                    if (negativeWords.contains(word)) {
+                        numNegativeWords++;
+                    }
+                }
+
+>>>>>>> cbb5ad2831281312fde0fb6cec059f7067d45b52
             }
             sentimentScore = (double)(numPositiveWords-numNegativeWords)/(numPositiveWords+numNegativeWords);
             // TODO Write in a file named "log.txt".
