@@ -110,16 +110,21 @@ public class Client {
             }
 
             else if (operation.equals("Insert")) {
-                System.out.println("Please input the book title: ");
-                String bookTitle = scan.nextLine();
-                System.out.println("Please input the genre: ");
-                String genre = scan.nextLine();
-                HashMap<String, String> record = new HashMap<>();
-                //record.put(bookTitle, genre);
+                System.out.println("Please input the book title and genre pair: ");
+                String pair = scan.nextLine();
+                String[] str = pair.split(":")
+                if (str.length != 2) {
+                	System.out.println("Improper format. Please check your input pair.");
+                } else {
+                	HashMap<String, String> record = new HashMap<>();
+                	record.put(str[0], str[1]);
+                	
+                }
+                  //record.put(bookTitle, genre);
 
 //                String record = scan.nextLine();
 //                record = record.split();
-//                HashMap<Strin>
+//                HashMap<String, String>
 
             }
 
