@@ -64,6 +64,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
           numNodes++;
           System.out.println("*** Node Initation Call: Connection from " + nodeIP);
           try{
+            // hash
               MessageDigest md = MessageDigest.getInstance("SHA1");
               md.reset();
               String hashString = nodeIP+ nodePort;

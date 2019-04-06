@@ -28,7 +28,7 @@ import org.apache.thrift.transport.TServerTransport;
 // This is the Code for the Node that is part of the DHT.
 //
 //
-public class NodeDHT implements Runnable //extends UnicastRemoteObject implements NodeDHTInterface
+public class NodeDHT implements Runnable
 {
     private static Node me, pred;
     private static int m;
@@ -50,17 +50,18 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
             System.out.println("NodeDHT MyPort NumNodes SuperNode-HostName SuperNode-Port");
             System.exit(1);
         }
-
+        // init DHT range and FingerTable
         int maxNumNodes = Integer.parseInt(args[1]);
         m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
         FingerTable[] finger = new FingerTable[m+1];
         DHTRange = (int)Math.pow(2,m);
 
-        System.out.println("Connecting to SuperNode");
 
+        System.out.println("Connecting to SuperNode");
         InetAddress myIP = InetAddress.getLocalHost();
         System.out.println("My IP: " + myIP.getHostAddress() + "\n");
 
+        // connecting to super node
         // String initInfo = service.Join(myIP.getHostAddress(),args[0]);
         // SN IP may be hard coded
         TTransport  transport = new TSocket(args[2], Integer.parseInt(args[3]));
@@ -72,9 +73,10 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
         transport.open();
         String initInfo = "I cannot get an id from Super Node! God there got to be an issue some where.";
         while(true){
+          // get contact point
           initInfo = client.Join("localhost",args[0]);
           String[] initInfoList = initInfo.split("/");
-
+          // busy, wait
           if (initInfoList[0].equals("NACK1")) {
               System.out.println(initInfoList[1]);
               try {
@@ -82,6 +84,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
               } catch (InterruptedException e) {
                    e.printStackTrace();
               }
+          // got max number of nodes
           } else if(initInfoList[0].equals("NACK0")) {
             System.out.println(initInfoList[1]);
             return;
@@ -90,25 +93,28 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
               break;
           }
         }
-
+        // init me and my predecessor
         String[] tokens = initInfo.split("/");
         me = new Node(Integer.parseInt(tokens[0]),myIP.getHostAddress(),args[0],tokens[0]);
         pred = new Node(Integer.parseInt(tokens[1]),tokens[2],tokens[3],tokens[1]);
 
         System.out.println("My given Node ID is: "+me.getID() + ". Predecessor ID: " +pred.getID());
 
+        // set all parameter to handler for remote access with thrift
         handler = new WorkWithNodeHandler(m, finger, DHTRange, pred, me);
         processor = new WorkWithNode.Processor(handler);
 
+        // populate variables
         Runnable runnable = new NodeDHT(0);
         Thread thread = new Thread(runnable);
         thread.start();
         client.PostJoin(me.getID());
         transport.close();
 
-        System.out.println("Listening for connection from Client or other Nodes...");
+        System.out.println("Listening for connection from Client or other Nodes");
         int port = Integer.parseInt(args[0]);
 
+        // init thrift server
         Runnable runnable2 = new NodeDHT(1);
         Thread t = new Thread(runnable2);
             t.start();
@@ -118,7 +124,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
 
         if (this.ID == 0) {
            FingerTable[] finger = handler.getfingerTable();
-            System.out.println("Building Finger table ... ");
+            System.out.println("Initing Finger table");
             for (int i = 1; i <= m; i++) {
                 finger[i] = new FingerTable();
                 finger[i].setStart((handler.getme().getID() + (int)Math.pow(2,i-1)) % DHTRange);
@@ -131,10 +137,11 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
             finger[m].setIntervalEnd(finger[1].getStart()-1);
 
 
-            if (handler.getPredecessor().getID() == handler.getme().getID()) { //if predcessor is same as my ID -> only node in DHT
+            if (handler.getPredecessor().getID() == handler.getme().getID()) { // only node in DHT
                 for (int i = 1; i <= m; i++) {
                     finger[i].setSuccessor(handler.getme());
                 }
+                // pupulating finger table
                 handler.setfingerTable(finger);
                 System.out.println(finger.length);
                 System.out.println("=============init finger table============================");
@@ -152,7 +159,6 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
                 handler.setfingerTable(finger);
                 try{
                     init_finger_table(handler.getPredecessor());
-                    ///////////////////////////////////////////////////////////////
                     System.out.println("Initiated Finger Table!");
                     update_others();
                     System.out.println("Updated all other nodes!");

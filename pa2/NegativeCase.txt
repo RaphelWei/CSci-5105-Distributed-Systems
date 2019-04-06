@@ -1,0 +1,105 @@
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Set/1
+the contact point id: 6
+Please input the path of the given file:
+sdjfasoghsghjsghsaogjsaghsg
+File does not exist. Please input the correct file path.
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/1
+the contact point id: 1
+Please input the book title you want to look up:
+jksfhuisahfuiahgjk
+Sorry the book queried is not in the DHT
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+jksdfjksbh
+the contact point id: 4
+Invalid command. Please use the operations listed above.
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Insert/1
+the contact point id: 1
+Please input the book title and genre pair:
+sdfsaj
+Improper format. Please check your input pair.
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/2
+the contact point id: 4
+Please input the book title you want to look up:
+A Midsummer Night's Dream
+The result of your search is: Comedies
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
