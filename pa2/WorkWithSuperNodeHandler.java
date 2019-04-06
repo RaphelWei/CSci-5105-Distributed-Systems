@@ -14,113 +14,135 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import java.math.*;
+// import java.rmi.*;
+// import java.rmi.server.*;
+// import java.security.*;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Random;
 
-public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface
-{
-  private int NumNode = 0;
-  private Boolean Joining = false;
-  private int nodeIdx = -1;
+public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
+  private static int maxNumNodes;
+  private static int numNodes;
+  private static int busy;
+  //int m = 5;
+  //int numDHT = (int)Math.pow(2,m);
+  //Node[] nodeList = new Node[numDHT];
+  private static int m;
+  private static int numDHT;
+  private static Node[] nodeList;
+  private List<Integer> nodeIDList;
 
-  // nodeIDx, hostname:Port:NodeMD5
-  private Map<Integer, String> NodeRecords = new HashMap<Integer, String>();
-
-// main!!!!!!!!!!!!!!!!!!!
-
-  public void setNumNode(int n){
-    NumNode=n;
+  public WorkWithSuperNodeHandler(int maxNumNodes_)
+  {
+    maxNumNodes = maxNumNodes_;
+    numNodes = 0;
+    busy = 0;
+    m = (int) Math.ceil(Math.log(maxNumNodes_) / Math.log(2));
+    numDHT = (int)Math.pow(2,m);
+    nodeList = new Node[numDHT];
+    nodeIDList = new ArrayList<Integer>();
   }
   @Override
-  public String Join(String IP, String Port){
-    System.out.println(Joining);
-    synchronized (this) {
-        if(Joining){
-          System.out.println("others Joining");
-          return "NACK0|Some other node is joining. Please wait...";
-        }
-        System.out.println("I am Joining");
-        Joining=true;
-    }
+  public String Join(String nodeIP, String nodePort) {
+    System.out.println(maxNumNodes);
+    System.out.println(nodeIDList.size());
+      if(nodeIDList.size()>=maxNumNodes){
+        return "NACK0/Reach Max Num Nodes";
+      }
+      if (busy == 0) {
 
-    if(nodeIdx>=NumNode){// We have reach the max number of nodes.
-      System.out.println("We have reach the max number of nodes");
-      Joining=false;
-      return "NACK1|We have reach the max number of nodes.";
-    }
+          synchronized (this) {
+              busy = 1;
+          }
 
-    if(NodeRecords.isEmpty()){ // This is the first node.
-      System.out.println("This is the first node.");
-      nodeIdx=nodeIdx+1;
-      String NodeMD5 = getMd5(IP+Port);
-      NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
-      System.out.println(nodeIdx);
-      System.out.println(IP+":"+Port+":"+NodeMD5);
-      System.out.println("first node returning");
-      Joining=false;
-      return "done|"+getMd5(IP+Port);
-    }
+          int nodeID = 0;
+          String initInfo = "";
+          numNodes++;
+          System.out.println("*** Node Initation Call: Connection from " + nodeIP);
+          try{
+              MessageDigest md = MessageDigest.getInstance("SHA1");
+              md.reset();
+              String hashString = nodeIP+ nodePort;
+              md.update(hashString.getBytes());
+              byte[] hashBytes = md.digest();
+              BigInteger hashNum = new BigInteger(1,hashBytes);
 
-    System.out.println("I am not the first one!");
+              nodeID = Math.abs(hashNum.intValue()) % numDHT;
 
-    Random r = new Random();
-    // int ContactNodeIdx = nodeIdx-r.nextInt((nodeIdx) + 1);!!!!!!!!!!!!!!!!!!!!!!!!!
-    nodeIdx = nodeIdx+1;
-    int ContactNodeIdx = r.nextInt((nodeIdx));// random int among [0,nodeIdx)
+              System.out.println("Generated ID: " + nodeID + " for requesting node");
+              System.out.println("nodeList.length:  " + nodeList.length);
+              System.out.println("nodeList[nodeID]: " + nodeList[nodeID]);
+              while(nodeList[nodeID] != null) { //ID Collision
+                  System.out.println("while loop");
+                  md.reset();
+                  md.update(hashBytes);
+                  hashBytes = md.digest();
+                  hashNum = new BigInteger(1,hashBytes);
+                  nodeID = Math.abs(hashNum.intValue()) % numDHT;
+                  System.out.println("ID Collision, new ID: " + nodeID);
+              }
 
-    String NodeMD5 = getMd5(IP+Port);
-    // the record for the new node:  <nodeIdx, IP:Port:NodeMD5>
-    NodeRecords.put(nodeIdx,IP+":"+Port+":"+NodeMD5);
+              int contactID = nodeID;
+              if(nodeIDList.size()>0){
+                // randomly select a node as contact point.
+                contactID = RandomNodeID();
+              }
 
-    System.out.println(nodeIdx);
-    System.out.println(IP+":"+Port+":"+NodeMD5);
-    System.out.println("not first node is now able to return");
+              if (nodeList[nodeID] == null) {
+                  nodeList[nodeID] = new Node(nodeID,nodeIP,nodePort);
+                  nodeIDList.add(nodeID);
+                  System.out.println("New node added ... ");
+              }
 
-    // ACK|newNodeMD5:ContactNodeIP:ContactNodePort:ContactNodeMD5
-    return "ACK|"+NodeMD5+":"+NodeRecords.get(ContactNodeIdx);
+              Node contactNode = nodeList[contactID];
+              initInfo = nodeID + "/" + contactID + "/" + contactNode.getIP() + "/" + contactNode.getPort();
 
+          } catch (Exception e){
+            e.printStackTrace();
+          }
+
+            System.out.println(initInfo);
+          return initInfo;
+
+      } else {
+          return "NACK1/Busy Super Node";
+      }
   }
-	public void PostJoin(String IP, String Port){
-    System.out.println("PostJoin");
-    synchronized (this) {
-      System.out.println("checking I am the joining node");
 
-        String[] JoiningNodeInfo = NodeRecords.get(nodeIdx).split(":");
-        if(JoiningNodeInfo[0].equals(IP)&&JoiningNodeInfo[1].equals(Port)){
-          System.out.println("releasing lock");
-          Joining=false;
-        }
-        System.out.println();
-    }
-    System.out.println("leaving Post Join");
-  }
-	public String GetNode(){
-    return "god! I haven't implement this!!!!!";
+  public Node getNode() {
+    int ID = RandomNodeID();
+    return nodeList[ID];
   }
 
-  public static String getMd5(String input)
-  {
-    try {
+  public int RandomNodeID() {
+    Random rand = new Random();
+    int index = rand.nextInt(nodeIDList.size());
+    int NodeID = nodeIDList.get(index);
+    return NodeID;
+  }
 
-        // Static getInstance method is called with hashing MD5
-        MessageDigest md = MessageDigest.getInstance("MD5");
+  public String getNodeList() {
+      String result = "";
+      Collections.sort(nodeIDList);
+      result = result + nodeIDList.size() + "/";
+      Iterator<Integer> iterator = nodeIDList.iterator();
+      while (iterator.hasNext()) {
+          int next = iterator.next();
+          result = result + nodeList[next].getID() + ":" + nodeList[next].getIP() + ":" + nodeList[next].getPort() + "/";
+      }
 
-        // digest() method is called to calculate message digest
-        //  of an input digest() return array of byte
-        byte[] messageDigest = md.digest(input.getBytes());
-
-        // Convert byte array into signum representation
-        BigInteger no = new BigInteger(1, messageDigest);
-
-        // Convert message digest into hex value
-        String hashtext = no.toString(16);
-        while (hashtext.length() < 32) {
-            hashtext = "0" + hashtext;
-        }
-        return hashtext;
-    }
-
-    // For specifying wrong message digest algorithms
-    catch (NoSuchAlgorithmException e) {
-        throw new RuntimeException(e);
-    }
+      return result;
+  }
+  @Override
+  public void PostJoin(int id) {
+      System.out.println("*** Post Initiation Call: Node " +id + " is in the DHT.");
+      System.out.println("Current number of nodes = " + numNodes + "\n");
+      synchronized (this) {
+          busy = 0;
+      }
   }
 }

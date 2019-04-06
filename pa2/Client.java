@@ -1,3 +1,14 @@
+import java.io.*;
+
+import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.math.*;
+import javax.xml.bind.DatatypeConverter;
+
+import java.net.*;
+import java.net.UnknownHostException;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportFactory;
 import org.apache.thrift.transport.TTransport;
@@ -16,120 +27,208 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 
 
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+public class Client {
+  private static int maxNumNodes;
+  private static int m;
+  private static int numDHT;
 
-
-public class Node {
-    public static WorkWithNodeHandler handler;
-    public static WorkWithNode.Processor processor;
-    // public variable?
-    // private String NodeID = 0;
-    // private String[] KeyRange = {"0", "0"};
-    public static void main(String [] args) {
+    public static void readGivenFile(String path, String ip, String port) throws IOException{
+        // HashMap<String, String> map = new HashMap<>();
         try {
-            handler = new WorkWithNodeHandler();
-            processor = new WorkWithNode.Processor(handler);
-            String myIP = args[0];
-            String myPort = args[1];
-            String m = args[2]; //128
-            String SNIP = args[3];
-            String SNPort = args[4];
-
-            // SN IP may be hard coded
-            TTransport  transport = new TSocket(SNIP, Integer.parseInt(SNPort));
-            // TTransport  transport = new TSocket("localhost", 9001);
-            TProtocol protocol = new TBinaryProtocol(transport);
-            WorkWithSuperNode.Client client = new WorkWithSuperNode.Client(protocol);
-
-            //Try to connect
-            transport.open();
-
-            // as a client
-            String temp ="";
-            while(true){
-              System.out.println(args[3]);
-              System.out.println(args[4]);
-  			      String ret = client.getNodeInfo(myIP, myPort);
-              System.out.println(ret);
-              String[] retparts = ret.split("\\|");
-              System.out.println(retparts.length);
-              System.out.println(retparts[1]);
-              if(retparts[0].equals("NACK0")){
-                System.out.println(retparts[1]);
-                System.out.println("wait 500 ms and retry");
-                try {
-                     Thread.sleep(500);
-                } catch (InterruptedException e) {
-                     e.printStackTrace();
-                }
-              } else if(retparts[0].equals("NACK1")){
-                System.out.println(retparts[1]);
-                System.out.println("terminating");
-                return;
-              } else if(retparts[0].equals("done")){
-                System.out.println("I am the first node!!!!!");
-                // I am the first node joining the system.
-                // String[] ContactInfo = retparts[1].split(":");
-                handler.setNodeID(retparts[1]);
-                handler.setmyInfo(myIP+":"+myPort+":"+retparts[1]);
-                // my predecessor is me.
-                handler.setpredecessorInfo(myIP+":"+myPort+":"+retparts[1]);
-                // all my fingers point to me.
-                String fingerTable = myIP+":"+myPort+":"+retparts[1];
-                int Hashm = Integer.parseInt(m);
-                for(int i = 1; i<Hashm; i++){
-                  fingerTable=fingerTable+"|"+myIP+":"+myPort+":"+retparts[1];
-                }
-                handler.setfingerTable(fingerTable);
-                System.out.println("I am the first node; finished!!!!!!");
-                temp = retparts[1];
-                break;
-              } else if(retparts[0].equals("ACK")){
-                System.out.println("I am not the first node!!!!!");
-                System.out.println("I got my MD5 and a node to contact!!!!!   "+retparts[0]);
-                //myNodeMD5:tarAddr:tarPort:tarNodeMD5
-                String[] ContactInfo = retparts[1].split(":");
-                handler.setNodeID(ContactInfo[0]);
-                handler.setmyInfo(myIP+":"+myPort+":"+ContactInfo[0]);
-
-                // find the correct node to contact (get the contact info of the node with ID right after mine.)
-                // this node will be my successor.
-                // retparts[1]: myNodeMD5:tarAddr:tarPort:tarNodeMD5
-                // CorrectedContactInfo: myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange
-                String correctTarInfo = CorrectContactInfo(retparts[1]);
-                String CorrectedContactInfo = ContactInfo[0]+":"+correctTarInfo;
-                System.out.println("this is the node I want to contact!!!!!   "+correctTarInfo);
-
-                // actual contact (update DHT)
-                // myNodeMD5:correctTarIP:correctTarPort:correctTarNodeID:correctTarKeyRange:myIP:myPort
-                ContactOtherNode(CorrectedContactInfo+":"+myIP+":"+myPort, correctTarInfo);
-                temp = ContactInfo[0];
-
-                break;
-              }
+            File file = new File(path);
+            BufferedReader br = new BufferedReader(new FileReader(file));
+            String thisline = null;
+            while ((thisline = br.readLine()) != null) {
+                String[] str = thisline.split(":");// assume title:genre
+                insertRecord(ip, port, str[0], str[1]);
+                // map.put(str[0], str[1]);maxNumNodes_
             }
-            client.PostJoin(myIP, myPort);
-            System.out.println("finished PostJoin; I guess good to go.");
-            // as a server
-            Runnable simple = new Runnable() {
-                public void run() {
-                  // System.out.println(args[0]);
-                    simple(processor, Integer.parseInt(myPort));
-                }
-            };
 
-            new Thread(simple).start();
-            String[] Fingers = handler.getfingerTable().split("\\|");
-
-            UpdateOthers(Fingers.length, temp);
-            System.out.println("finished UpdateOthers");
-            System.out.println("finished populating my finger table " + handler.getfingerTable());
-            // System.out.println("finished populating my keyRange     " + handler.getKeyRange());
-
-        } catch(TException e) {
-          System.out.println(e);
+        } catch (IOException e) {
+            System.err.println("File does not exist. Please input the correct file path.");
+            e.printStackTrace();
         }
     }
+
+    public static void lookupBook(String ip, String port, String title) throws NoSuchAlgorithmException {
+        int key = getHashedKey(title);
+        String ret = "";
+        try{
+              TTransport  transport = new TSocket(ip, Integer.parseInt(port));
+              TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+              WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+              //Try to connect
+              transport.open();
+              ret = client.lookupBook_ByKey(key, title); // NACK or genre
+              transport.close();
+
+            } catch(TException e) {
+                e.printStackTrace();
+            }
+        if(ret.equals("NACK")){
+          System.out.println("Sorry the book queried is not in the DHT");
+        } else {
+          System.out.println("The result of your search is: "+ ret);
+        }
+}
+
+    public static void insertRecord(String ip, String port, String title, String genre) {
+
+        int key = getHashedKey(title);
+        String ret = "";
+        try{
+              TTransport  transport = new TSocket(ip, Integer.parseInt(port));
+              TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+              WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+              //Try to connect
+              transport.open();
+              ret = client.insertRecord_ByKey(key, title, genre);
+              transport.close();
+
+        } catch(TException e) {
+            e.printStackTrace();
+        }
+        if(ret.equals("NACK")){
+          System.out.println("insert not success");
+        } else {
+          System.out.println("insert success");
+        }
+
+
+    }
+
+
+    public static int getHashedKey(String key) {
+        int hashedKey = 0;
+        try {
+
+          MessageDigest md = MessageDigest.getInstance("SHA1");
+          md.reset();
+          md.update(key.getBytes());
+          byte[] digest = md.digest();
+          BigInteger hashNum = new BigInteger(digest);
+
+          hashedKey = Math.abs(hashNum.intValue()) % numDHT;
+
+
+
+            // MessageDigest md = MessageDigest.getInstance("SHA1");
+            // md.update(key.getBytes());
+            // byte[] digest = md.digest();
+            // BigInteger bi = new BigInteger(digest);
+            // BigInteger m = new BigInteger("128");
+            // bi = bi.mod(m);
+            // hashedKey = Integer.parseInt(bi.toString(10));
+            // System.out.println(hashedKey);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+        return hashedKey;
+    }
+
+    public static void printAllNodeInfo() {
+
+    }
+
+
+
+    // args format [SNIP] [SNPort]
+    public static void main (String[] args) throws IOException, NoSuchAlgorithmException {
+        if (args.length !=3) {
+            System.out.println("Please check your input format: [SuperNode IP] [SuperNode Port] [MaxNumNodes]");
+            System.exit(1);
+        }
+        maxNumNodes = Integer.parseInt(args[2]);
+        m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
+        numDHT = (int)Math.pow(2,m);
+
+        for (;;) {
+            System.out.print("\n\n\n");
+            System.out.println("******************************** System starts ************************************************");
+            System.out.println("Please specify the operation that you want this system to execute: ");
+            System.out.println("Set - Setting a book title and its genre from a given file.");
+            System.out.println("Get - Looking up a book title for its genre.");
+            System.out.println("Insert - Inserting a new record to the system or updating the genre for a existing book.");
+            System.out.println("Print - Printing the information of all nodes.");
+            System.out.println("Exit - Exiting from the system.");
+            System.out.print("\n\n\n");
+
+
+//        if (args.length != 1) {
+//            System.out.println("Please use the operation listed above!");
+//            System.exit(1);
+//        }
+
+            Scanner scan = new Scanner(System.in);
+            String operation = scan.nextLine();
+
+            Node p = new Node();
+            try{
+                TTransport  transport = new TSocket(args[0], Integer.parseInt(args[1]));
+                TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+                WorkWithSuperNode.Client client = new WorkWithSuperNode.Client(protocol);
+                //Try to connect
+                transport.open();
+                p = client.getNode();
+                transport.close();
+
+                } catch(TException e) {
+                    e.printStackTrace();
+                }
+
+            if (operation.equals("Set")) {
+                System.out.println("Please input the path of the given file: ");
+                String path = scan.nextLine();
+
+                readGivenFile(path, p.getIP(), p.getPort());
+            }
+            else if (operation.equals("Get")) {
+                System.out.println("Please input the book title you want to look up: ");
+                String title = scan.nextLine();
+                lookupBook(p.getIP(), p.getPort(), title);
+                System.out.println("\n");
+            }
+            else if (operation.equals("Insert")) {
+                System.out.println("Please input the book title and genre pair: ");
+                String pair = scan.nextLine();
+                String[] str = pair.split(":");
+                if (str.length != 2) {
+                	System.out.println("Improper format. Please check your input pair.");
+                } else {
+                    insertRecord(p.getIP(), p.getPort(), str[0], str[1]);
+                }
+            }
+            else if (operation.equals("Print")) {
+                printStructure(p);
+            }
+            else if (operation.equals("Exit")) {
+                System.out.println("******************************** System ends ************************************************");
+                System.exit(0);
+            }
+            else {
+                System.out.println("Invalid command. Please use the operations listed above.");
+            }
+        }
+    }
+
+    public static void printStructure(Node p){
+      Node init = p;
+      do{
+        try{
+          TTransport  transport = new TSocket(p.getIP(), Integer.parseInt(p.getPort()));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+          //Try to connect
+          transport.open();
+          String pInFo = client.AllInFoString();
+          System.out.println(pInFo);
+          p = client.getPredecessor();
+          transport.close();
+
+        } catch(TException e) {
+            e.printStackTrace();
+        }
+      }while(p.getID()!=(init.getID()));
+    }
+
 }

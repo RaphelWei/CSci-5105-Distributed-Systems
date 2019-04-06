@@ -1,11 +1,18 @@
+struct Node {
+	1: i32 ID,
+	2: string IP,
+	3: string Port
+}
+
+struct FingerTable {
+	1: i32 Start,
+	2: i32 IntervalBegin,
+	3: i32 IntervalEnd,
+	4: Node Successor
+}
+
 service WorkWithSuperNode {
-	// bool ping(),
-	// void setNumNode(1:i32 n),
-	string Join(1:string IP, 2:string Port),
-	void PostJoin(1:string IP, 2:string Port)
-	// string GetNode()
-	// string CheckFile(1: string path),
-	// string WriteString(1:string fileName, 2:double poswords, 3:double negwords, 4:double sentiment),
-	// list<string> getSentimentWords(1: string path),
-	// string SortIntermediateData(1: map<string, string> statusRecords)
+	string Join(1:string nodeIP, 2:string nodePort),
+	void PostJoin(1:i32 id),
+	Node getNode()
 }
