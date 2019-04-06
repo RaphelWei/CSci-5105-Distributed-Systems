@@ -10,7 +10,7 @@ public class ClientNode
 {
     private static SuperNodeDef service;
     private static int m;
-    private static int numDHT;
+    private static int DHTSize;
 
     public static void readSampleWords(){
         File fileSample = null;
@@ -35,7 +35,7 @@ public class ClientNode
                     md.update(stringSplit[0].getBytes());
                     byte[] hashBytes = md.digest();
                     BigInteger hashNum = new BigInteger(1,hashBytes);
-                    int key = Math.abs(hashNum.intValue()) % numDHT;
+                    int key = Math.abs(hashNum.intValue()) % DHTSize;
                     //System.out.println("String 1=> "+stringSplit[0] + " || String 2=> "+ key);
 
                     String response = service.GetNode();
@@ -129,7 +129,7 @@ public class ClientNode
 
         int maxNumNodes = Integer.parseInt(args[1]);
         m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
-        numDHT = (int)Math.pow(2,m);
+        DHTSize = (int)Math.pow(2,m);
 
         // Assign security manager
         if (System.getSecurityManager() == null)
@@ -174,7 +174,7 @@ public class ClientNode
                 md2.update(wordLookup.getBytes());
                 byte[] hashBytes2 = md2.digest();
                 BigInteger hashNum2 = new BigInteger(1,hashBytes2);
-                int key2 = Math.abs(hashNum2.intValue()) % numDHT;
+                int key2 = Math.abs(hashNum2.intValue()) % DHTSize;
 
                 System.out.println("Hashed key: " + key2);
 
@@ -193,7 +193,7 @@ public class ClientNode
                 md3.update(wordInput.getBytes());
                 byte[] hashBytes3 = md3.digest();
                 BigInteger hashNum3 = new BigInteger(1,hashBytes3);
-                int key3 = Math.abs(hashNum3.intValue()) % numDHT;
+                int key3 = Math.abs(hashNum3.intValue()) % DHTSize;
 
                 System.out.println("Hashed key: " + key3);
                 System.out.print ("Tell me the meaning of this word: ");

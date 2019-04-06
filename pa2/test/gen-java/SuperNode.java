@@ -46,9 +46,9 @@ public class SuperNode
 
 
         // m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
-        // numDHT = (int)Math.pow(2,m);
+        // DHTSize = (int)Math.pow(2,m);
         //
-        // nodeList = new Node[numDHT];
+        // nodeList = new Node[DHTSize];
         // Assign a security manager, in the event that dynamic
         // classes are loaded
         // if (System.getSecurityManager() == null)

@@ -23,10 +23,10 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
     private static Node me, pred;
     //static int m = 5;
     //static FingerTable[] finger = new FingerTable[m+1];
-    //static int numDHT = (int)Math.pow(2,m);
+    //static int DHTSize = (int)Math.pow(2,m);
     private static int m;
     private static FingerTable[] finger;
-    private static int numDHT;
+    private static int DHTSize;
     private static List<Word> wordList = new ArrayList<Word>();
 
     public NodeDHT(Socket s, int i) {
@@ -49,7 +49,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
         int maxNumNodes = Integer.parseInt(args[2]);
         m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
         finger = new FingerTable[m+1];
-        numDHT = (int)Math.pow(2,m);
+        DHTSize = (int)Math.pow(2,m);
 
         System.out.println("The Node starts by connecting at the SuperNode.");
         System.out.println("Establishing connection to the SuperNode...");
@@ -138,7 +138,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
             System.out.println("Building Finger table ... ");
             for (int i = 1; i <= m; i++) {
                 finger[i] = new FingerTable();
-                finger[i].setStart((me.getID() + (int)Math.pow(2,i-1)) % numDHT);
+                finger[i].setStart((me.getID() + (int)Math.pow(2,i-1)) % DHTSize);
             }
             for (int i = 1; i < m; i++) {
                 finger[i].setInterval(finger[i].getStart(),finger[i+1].getStart());
@@ -331,9 +331,9 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
                 int succ = Integer.parseInt(tokens4[0]);
                 int fiSucc = finger[i+1].successor().getID();
                 if (fiStart > succ)
-                    succ = succ + numDHT;
+                    succ = succ + DHTSize;
                 if (fiStart > fiSucc)
-                    fiSucc = fiSucc + numDHT;
+                    fiSucc = fiSucc + DHTSize;
 
                 if ( fiStart <= succ && succ <= fiSucc ) {
                     finger[i+1].setSuccessor(new Node(Integer.parseInt(tokens4[0]),tokens4[1],tokens4[2]));
@@ -347,7 +347,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
         for (int i = 1; i <= m; i++) {
             int id = me.getID() - (int)Math.pow(2,i-1) + 1;
             if (id < 0)
-                id = id + numDHT;
+                id = id + DHTSize;
 
             p = find_predecessor(id);
 

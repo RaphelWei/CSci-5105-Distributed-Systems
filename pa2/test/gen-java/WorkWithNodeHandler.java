@@ -29,10 +29,10 @@ public class WorkWithNodeHandler implements WorkWithNode.Iface
 private static Node me, pred;
 //static int m = 5;
 //static FingerTable[] finger = new FingerTable[m+1];
-//static int numDHT = (int)Math.pow(2,m);
+//static int DHTSize = (int)Math.pow(2,m);
 private static int m;
 private static FingerTable[] finger;
-private static int numDHT;
+private static int DHTSize;
 // private static List<Word> wordList = new ArrayList<Word>();
 
 Node getme(){
@@ -47,10 +47,10 @@ void setfingerTable(FingerTable[] finger_){
   finger = finger_;
 }
 
-public WorkWithNodeHandler(int m_, FingerTable[] finger_, int numDHT_, Node pred_, Node me_){
+public WorkWithNodeHandler(int m_, FingerTable[] finger_, int DHTSize_, Node pred_, Node me_){
   m = m_;
   finger = finger_;
-  numDHT = numDHT_;
+  DHTSize = DHTSize_;
   me = me_;
   pred = pred_;
 }
@@ -75,6 +75,7 @@ public void setPredecessor(Node n) // throws RemoteException
 @Override
 public Node find_predecessor(int id)
 {
+    System.out.println("I am now at nodeID: "+me.getID());
     Node n = me;
     int myID = n.getID();
     int succID = finger[1].getSuccessor().getID();
@@ -82,49 +83,29 @@ public Node find_predecessor(int id)
     if (myID >= succID)
         normalInterval = 0;
 
-
-    //	System.out.println("id ... " + id + " my " + myID + " succ " + succID + " " );
-
-    while ((normalInterval==1 && (id <= myID || id > succID)) ||
+    if ((normalInterval==1 && (id <= myID || id > succID)) ||
             (normalInterval==0 && (id <= myID && id > succID))) {
 
         Node result = new Node();
-        try{
-          TTransport  transport = new TSocket(n.getIP(), Integer.parseInt(n.getPort()));
-          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
-          //Try to connect
-          transport.open();
-          result = client.closet_preceding_finger(id);
-          transport.close();
-        } catch(TException e) {
-        }
-
-        n = result;
-        myID = n.getID();
+        result = closet_preceding_finger(id);
 
         Node result2 = new Node();
         try{
-          TTransport  transport = new TSocket(n.getIP(), Integer.parseInt(n.getPort()));
+          TTransport  transport = new TSocket(result.getIP(), Integer.parseInt(result.getPort()));
           TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
           WorkWithNode.Client client = new WorkWithNode.Client(protocol);
           //Try to connect
           transport.open();
-          result2 = client.getSuccessor();
+          result2 = client.find_predecessor(id);
           transport.close();
 
         } catch(TException e) {
         }
-
-        succID = result2.getID();
-
-        if (myID >= succID)
-            normalInterval = 0;
-        else normalInterval = 1;
-            }
-    //System.out.println("Returning n" + n.getID());
-
-    return n;
+        return result2;
+    }
+    else{
+      return n;
+    }
 }
 
 @Override

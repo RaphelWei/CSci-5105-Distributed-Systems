@@ -29,10 +29,10 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
   private static int numNodes;
   private static int busy;
   //int m = 5;
-  //int numDHT = (int)Math.pow(2,m);
-  //Node[] nodeList = new Node[numDHT];
+  //int DHTSize = (int)Math.pow(2,m);
+  //Node[] nodeList = new Node[DHTSize];
   private static int m;
-  private static int numDHT;
+  private static int DHTSize;
   private static Node[] nodeList;
   private List<Integer> nodeIDList;
 
@@ -42,8 +42,8 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
     numNodes = 0;
     busy = 0;
     m = (int) Math.ceil(Math.log(maxNumNodes_) / Math.log(2));
-    numDHT = (int)Math.pow(2,m);
-    nodeList = new Node[numDHT];
+    DHTSize = (int)Math.pow(2,m);
+    nodeList = new Node[DHTSize];
     nodeIDList = new ArrayList<Integer>();
   }
   @Override
@@ -71,7 +71,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
               byte[] hashBytes = md.digest();
               BigInteger hashNum = new BigInteger(1,hashBytes);
 
-              nodeID = Math.abs(hashNum.intValue()) % numDHT;
+              nodeID = Math.abs(hashNum.intValue()) % DHTSize;
 
               System.out.println("Generated ID: " + nodeID + " for requesting node");
               System.out.println("nodeList.length:  " + nodeList.length);
@@ -82,7 +82,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
                   md.update(hashBytes);
                   hashBytes = md.digest();
                   hashNum = new BigInteger(1,hashBytes);
-                  nodeID = Math.abs(hashNum.intValue()) % numDHT;
+                  nodeID = Math.abs(hashNum.intValue()) % DHTSize;
                   System.out.println("ID Collision, new ID: " + nodeID);
               }
 
