@@ -29,10 +29,10 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
   private static int numNodes;
   private static int busy;
   //int m = 5;
-  //int numDHT = (int)Math.pow(2,m);
-  //Node[] nodeList = new Node[numDHT];
+  //int DHTRange = (int)Math.pow(2,m);
+  //Node[] nodeList = new Node[DHTRange];
   private static int m;
-  private static int numDHT;
+  private static int DHTRange;
   private static Node[] nodeList;
   private List<Integer> nodeIDList;
 
@@ -42,8 +42,8 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
     numNodes = 0;
     busy = 0;
     m = (int) Math.ceil(Math.log(maxNumNodes_) / Math.log(2));
-    numDHT = (int)Math.pow(2,m);
-    nodeList = new Node[numDHT];
+    DHTRange = (int)Math.pow(2,m);
+    nodeList = new Node[DHTRange];
     nodeIDList = new ArrayList<Integer>();
   }
   @Override
@@ -64,6 +64,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
           numNodes++;
           System.out.println("*** Node Initation Call: Connection from " + nodeIP);
           try{
+            // hash
               MessageDigest md = MessageDigest.getInstance("SHA1");
               md.reset();
               String hashString = nodeIP+ nodePort;
@@ -71,7 +72,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
               byte[] hashBytes = md.digest();
               BigInteger hashNum = new BigInteger(1,hashBytes);
 
-              nodeID = Math.abs(hashNum.intValue()) % numDHT;
+              nodeID = Math.abs(hashNum.intValue()) % DHTRange;
 
               System.out.println("Generated ID: " + nodeID + " for requesting node");
               System.out.println("nodeList.length:  " + nodeList.length);
@@ -82,7 +83,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
                   md.update(hashBytes);
                   hashBytes = md.digest();
                   hashNum = new BigInteger(1,hashBytes);
-                  nodeID = Math.abs(hashNum.intValue()) % numDHT;
+                  nodeID = Math.abs(hashNum.intValue()) % DHTRange;
                   System.out.println("ID Collision, new ID: " + nodeID);
               }
 
@@ -93,7 +94,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
               }
 
               if (nodeList[nodeID] == null) {
-                  nodeList[nodeID] = new Node(nodeID,nodeIP,nodePort);
+                  nodeList[nodeID] = new Node(nodeID,nodeIP,nodePort,Integer.toString(nodeID));
                   nodeIDList.add(nodeID);
                   System.out.println("New node added ... ");
               }

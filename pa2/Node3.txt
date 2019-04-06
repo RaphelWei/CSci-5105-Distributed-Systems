@@ -1,0 +1,81 @@
+wei00114@cs-exa:/home/wei00114/CSci-5105-Distributed-Systems/pa2/gen-java $ java -cp ".:/usr/local/Thrift/*" NodeDHT 9004 5 localhost 9001
+ ****************************************************
+Connecting to SuperNode
+My IP: 128.101.35.175
+
+I got my ID and a node to contact!!!!!   6/3/localhost/9003
+My given Node ID is: 6. Predecessor ID: 3
+Building Finger table ...
+Asking node 3 at localhost
+Listening for connection from Client or other Nodes...
+9004
+=============init finger table============================
+finger[1] succ id  3
+finger[1] start id 7
+finger[2] succ id  3
+finger[2] start id 0
+finger[3] succ id  3
+finger[3] start id 2
+=============init finger table============================
+
+Initiated Finger Table!
+in find_pred: I am now at nodeID: 6 to find key: 6
+in find_predecessor, result2.getTrace(): 6 -> 3 -> 5
+in find_pred: I am now at nodeID: 6 to find key: 5
+in find_predecessor, result2.getTrace(): 6 -> 3
+in find_pred: I am now at nodeID: 6 to find key: 3
+Updated all other nodes!
+in find_succ: I am now at nodeID: 6 to find key: 5
+in find_pred: I am now at nodeID: 6 to find key: 5
+in find_predecessor, result2.getTrace(): 6 -> 3
+in find_succ: I am now at nodeID: 6 to find key: 6
+in find_pred: I am now at nodeID: 6 to find key: 6
+in find_predecessor, result2.getTrace(): 6 -> 3 -> 5
+in find_succ: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 3
+in find_pred: I am now at nodeID: 6 to find key: 1
+in find_succ: I am now at nodeID: 6 to find key: 2
+in find_pred: I am now at nodeID: 6 to find key: 2
+in find_succ: I am now at nodeID: 6 to find key: 5
+in find_pred: I am now at nodeID: 6 to find key: 5
+in find_predecessor, result2.getTrace(): 6 -> 3 -> 4
+in find_pred: I am now at nodeID: 6 to find key: 1
+=============update finger table==========================
+finger[1] succ id  1
+finger[1] start id 7
+finger[2] succ id  3
+finger[2] start id 0
+finger[3] succ id  3
+finger[3] start id 2
+=============update finger table==========================
+
+in find_pred: I am now at nodeID: 6 to find key: 0
+=============update finger table==========================
+finger[1] succ id  1
+finger[1] start id 7
+finger[2] succ id  1
+finger[2] start id 0
+finger[3] succ id  3
+finger[3] start id 2
+=============update finger table==========================
+
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 1
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 0
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 1
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_pred: I am now at nodeID: 6 to find key: 7
+in find_succ: I am now at nodeID: 6 to find key: 4
+in find_pred: I am now at nodeID: 6 to find key: 4
+in find_predecessor, result2.getTrace(): 6 -> 3

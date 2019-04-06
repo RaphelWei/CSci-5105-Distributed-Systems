@@ -1,7 +1,8 @@
 struct Node {
 	1: i32 ID,
 	2: string IP,
-	3: string Port
+	3: string Port,
+	4: string Trace
 }
 
 struct FingerTable {

@@ -1,0 +1,372 @@
+wei00114@cs-exa:/home/wei00114/CSci-5105-Distributed-Systems/pa2/gen-java $ java -cp ".:/usr/local/Thrift/*" Client localhost 9001 5
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Set/1
+the contact point id: 5
+Please input the path of the given file:
+./shakespeares.txt
+insert All's Well That Ends Well success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert As You Like It success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert The Comedy of Errors success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 3
+insert Love's Labor's Lost success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert Measure for Measure success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert The Merchant of Venice success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert The Merry Wives of Windsor success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert A Midsummer Night's Dream success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert Much Ado About Nothing success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert The Taming of the Shrew success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4 -> 6 -> 3 -> 5 -> 5
+the key to insert: 5
+insert Twelfth Night success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 3
+insert The Two Gentlemen of Verona success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert The Two Noble Kinsmen success, this insertion has go through the path:
+5 -> 6
+the key to insert: 6
+insert Henry IV, Part 1 success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert Henry IV, Part 2 success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 1
+insert Henry V success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert Henry VI, Part 1 success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4 -> 6 -> 3 -> 5 -> 5
+the key to insert: 5
+insert Henry VI, Part 2 success, this insertion has go through the path:
+5 -> 6
+the key to insert: 6
+insert Henry VI, Part 3 success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 3
+insert Henry VIII success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert King John success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert Richard II success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert Richard III success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert Antony and Cleopatra success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert Coriolanus success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert Hamlet success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert Julius Caesar success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert King Lear success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 3
+insert Macbeth success, this insertion has go through the path:
+5 -> 6
+the key to insert: 6
+insert Othello success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 3
+insert Romeo and Juliet success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 0
+insert Timon of Athens success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4 -> 6 -> 3 -> 5 -> 5
+the key to insert: 5
+insert Titus Andronicus success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert Troilus and Cressida success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4 -> 6 -> 3 -> 5 -> 5
+the key to insert: 5
+insert Cymbeline success, this insertion has go through the path:
+5 -> 6
+the key to insert: 6
+insert Pericles success, this insertion has go through the path:
+5 -> 6
+the key to insert: 6
+insert The Tempest success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert The Winter's Tale success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+insert Lucrece success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 7
+insert The Phoenix and Turtle success, this insertion has go through the path:
+5 -> 1 -> 6 -> 3 -> 5 -> 3
+the key to insert: 2
+insert Sonnets success, this insertion has go through the path:
+5 -> 6 -> 1
+the key to insert: 1
+insert Venus and Adonis success, this insertion has go through the path:
+5 -> 1 -> 3 -> 4
+the key to insert: 4
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/1
+the contact point id: 5
+Please input the book title you want to look up:
+The Merchant of Venice
+The result of your search is: Comedies
+path: 5 -> 1 -> 3 -> 4
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/0
+the contact point id: 5
+Please input the book title you want to look up:
+The Merchant of Venice
+The result of your search is: Comedies
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Insert
+the contact point id: 5
+Please input the book title and genre pair:
+Zongshun:Student
+insert Zongshun success
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/1
+the contact point id: 1
+Please input the book title you want to look up:
+Zongshun
+The result of your search is: Student
+path: 1 -> 5 -> 6 -> 1
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Get/1
+the contact point id: 6
+Please input the book title you want to look up:
+tttttttttttttttttttttt
+Sorry the book queried is not in the DHT
+
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Print
+the contact point id: 1
+===============================================================
+I am node with nodeID 1. my predecesor is node with nodeID 6.
+
+
+ my partial hash table is listed below
+Love's Labor's Lost: Comedies
+Hamlet: Tragedies
+The Two Gentlemen of Verona: Comedies
+Lucrece: Poems
+Richard III: Histories
+Henry IV, Part 1: Histories
+Coriolanus: Tragedies
+Henry IV, Part 2: Histories
+Zongshun: Student
+Sonnets: Poems
+Measure for Measure: Comedies
+A Midsummer Night's Dream: Comedies
+Romeo and Juliet: Tragedies
+Much Ado About Nothing: Comedies
+The Merry Wives of Windsor: Comedies
+
+
+===============================================================
+
+===============================================================
+I am node with nodeID 6. my predecesor is node with nodeID 5.
+
+
+ my partial hash table is listed below
+Henry VI, Part 2: Histories
+Macbeth: Tragedies
+Pericles: Romances
+Cymbeline: Romances
+The Two Noble Kinsmen: Comedies
+
+
+===============================================================
+
+===============================================================
+I am node with nodeID 5. my predecesor is node with nodeID 4.
+
+
+ my partial hash table is listed below
+Troilus and Cressida: Tragedies
+Henry VI, Part 1: Histories
+Timon of Athens: Tragedies
+The Taming of the Shrew: Comedies
+
+
+===============================================================
+
+===============================================================
+I am node with nodeID 4. my predecesor is node with nodeID 3.
+
+
+ my partial hash table is listed below
+Venus and Adonis: Poems
+As You Like It: Comedies
+Richard II: Histories
+Titus Andronicus: Tragedies
+King John: Histories
+Julius Caesar: Tragedies
+The Merchant of Venice: Comedies
+The Winter's Tale: Romances
+
+
+===============================================================
+
+===============================================================
+I am node with nodeID 3. my predecesor is node with nodeID 1.
+
+
+ my partial hash table is listed below
+Henry VI, Part 3: Histories
+The Comedy of Errors: Comedies
+Antony and Cleopatra: Tragedies
+Henry V: Histories
+All's Well That Ends Well: Comedies
+Othello: Tragedies
+The Phoenix and Turtle: Poems
+Twelfth Night: Comedies
+King Lear: Tragedies
+The Tempest: Romances
+Henry VIII: Histories
+
+
+===============================================================
+
+
+
+
+******************************** System starts ************************************************
+Please specify the operation that you want this system to execute:
+Please specify (0 or 1) for Set and Get, if you would like to print path. e,g 'Get/1' will print the path, 'Get/0' won't
+Set - Setting a book title and its genre from a given file.
+Get - Looking up a book title for its genre.
+Insert - Inserting a new record to the system or updating the genre for a existing book.
+Print - Printing the information of all nodes.
+Exit - Exiting from the system.
+
+
+
+Exit
+the contact point id: 6
+******************************** System ends ************************************************
+wei00114@cs-exa:/home/wei00114/CSci-5105-Distributed-Systems/pa2/gen-java $

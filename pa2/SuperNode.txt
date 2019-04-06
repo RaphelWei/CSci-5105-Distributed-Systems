@@ -1,0 +1,63 @@
+wei00114@cs-exa:/home/wei00114/CSci-5105-Distributed-Systems/pa2/gen-java $ java -cp ".:/usr/local/Thrift/*" SuperNode 5 9001
+5
+5
+0/
+9001
+5
+0
+*** Node Initation Call: Connection from localhost
+Generated ID: 5 for requesting node
+nodeList.length:  8
+nodeList[nodeID]: null
+New node added ...
+5/5/localhost/9002
+*** Post Initiation Call: Node 5 is in the DHT.
+Current number of nodes = 1
+
+5
+1
+*** Node Initation Call: Connection from localhost
+Generated ID: 3 for requesting node
+nodeList.length:  8
+nodeList[nodeID]: null
+New node added ...
+3/5/localhost/9002
+*** Post Initiation Call: Node 3 is in the DHT.
+Current number of nodes = 2
+
+5
+2
+*** Node Initation Call: Connection from localhost
+Generated ID: 6 for requesting node
+nodeList.length:  8
+nodeList[nodeID]: null
+New node added ...
+6/3/localhost/9003
+*** Post Initiation Call: Node 6 is in the DHT.
+Current number of nodes = 3
+
+5
+3
+*** Node Initation Call: Connection from localhost
+Generated ID: 4 for requesting node
+nodeList.length:  8
+nodeList[nodeID]: null
+New node added ...
+4/6/localhost/9004
+*** Post Initiation Call: Node 4 is in the DHT.
+Current number of nodes = 4
+
+5
+4
+*** Node Initation Call: Connection from localhost
+Generated ID: 3 for requesting node
+nodeList.length:  8
+nodeList[nodeID]: Node(ID:3, IP:localhost, Port:9003, Trace:3)
+while loop
+ID Collision, new ID: 3
+while loop
+ID Collision, new ID: 1
+New node added ...
+1/6/localhost/9004
+*** Post Initiation Call: Node 1 is in the DHT.
+Current number of nodes = 5

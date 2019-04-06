@@ -1,0 +1,42 @@
+wei00114@cs-exa:/home/wei00114/CSci-5105-Distributed-Systems/pa2/gen-java $ java -cp ".:/usr/local/Thrift/*" NodeDHT 9005 5 localhost 9001
+ ****************************************************
+Connecting to SuperNode
+My IP: 128.101.35.175
+
+I got my ID and a node to contact!!!!!   4/6/localhost/9004
+My given Node ID is: 4. Predecessor ID: 6
+Building Finger table ...
+Asking node 6 at localhost
+Listening for connection from Client or other Nodes...
+9005
+=============init finger table============================
+finger[1] succ id  5
+finger[1] start id 5
+finger[2] succ id  6
+finger[2] start id 6
+finger[3] succ id  3
+finger[3] start id 0
+=============init finger table============================
+
+Initiated Finger Table!
+in find_pred: I am now at nodeID: 4 to find key: 4
+in find_predecessor, result2.getTrace(): 4 -> 3
+in find_pred: I am now at nodeID: 4 to find key: 3
+in find_predecessor, result2.getTrace(): 4 -> 6
+in find_pred: I am now at nodeID: 4 to find key: 1
+in find_predecessor, result2.getTrace(): 4 -> 6
+Updated all other nodes!
+in find_pred: I am now at nodeID: 4 to find key: 5
+=============update finger table==========================
+finger[1] succ id  5
+finger[1] start id 5
+finger[2] succ id  6
+finger[2] start id 6
+finger[3] succ id  1
+finger[3] start id 0
+=============update finger table==========================
+
+in find_pred: I am now at nodeID: 4 to find key: 5
+in find_pred: I am now at nodeID: 4 to find key: 5
+in find_pred: I am now at nodeID: 4 to find key: 5
+in find_pred: I am now at nodeID: 4 to find key: 5
