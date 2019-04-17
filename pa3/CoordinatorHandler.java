@@ -31,7 +31,7 @@ public class CoordinatorHandler implements Coordinator.Iface
   ArrayList<Server> ServerList = new ArrayList<Server>();
   int NR;
   int NW;
-  Map<String, String> reqs = new HashMap<String, String>();
+  ArrayList<REQ> reqs = new ArrayList<REQ>();
   // @Override
   // public void request(String filename, String clientInfo, String request)
   // {
@@ -48,8 +48,9 @@ public class CoordinatorHandler implements Coordinator.Iface
   //   }
   // }
 
+  // todo: save request
   public void forwardReq(String filename, String clientInfo, String request){
-    
+
   }
 
   @Override
