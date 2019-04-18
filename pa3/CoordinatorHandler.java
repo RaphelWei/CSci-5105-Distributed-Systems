@@ -21,6 +21,8 @@ import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 
+import java.util.concurrent.*;
+
 
 public class CoordinatorHandler implements Coordinator.Iface
 {
@@ -28,10 +30,18 @@ public class CoordinatorHandler implements Coordinator.Iface
   String CoordinatorIP;
   String CoordinatorPort;
   // Server[] ServerList;
+  // Server: IP;Port
   ArrayList<Server> ServerList = new ArrayList<Server>();
   int NR;
   int NW;
+  // REQ:OP;Filename;ClientIP;ClientPort
   ArrayList<REQ> reqs = new ArrayList<REQ>();
+  // <Filename,OP>
+  // note: for R, the number of char R means how many R op working.
+  ConcurrentHashMap<String, String> FileOP = new ConcurrentHashMap<String, String>();
+  ConcurrentHashMap<String, Integer> FileR = new ConcurrentHashMap<String, Integer>();
+  Boolean SYNC = false;
+
   // @Override
   // public void request(String filename, String clientInfo, String request)
   // {
@@ -48,9 +58,8 @@ public class CoordinatorHandler implements Coordinator.Iface
   //   }
   // }
 
-  // todo: save request
-  public void forwardReq(String filename, String clientInfo, String request){
-
+  public synchronized void forwardReq(REQ r){
+    reqs.add(r);
   }
 
   @Override
@@ -82,24 +91,102 @@ public class CoordinatorHandler implements Coordinator.Iface
     return rand.nextInt(ServerList.size());
   }
 
-  public Server find_newest(Server[] ServerCheckList, String filename){
-    Server tarSer = ServerCheckList[0];
+  // ServerCheckList: formed by getQuo; with size NR or NW
+  public Server find_newest(ArrayList<Server> ServerCheckList, String Filename){
+    Server tarSer = ServerCheckList.get(0);
     int tarVer = 0;
     for (int i=0;i<ServerCheckList.size();i++){
-      TTransport  transport = new TSocket(ServerCheckList[i].IP, Integer.parseInt(ServerCheckList[i].Port));
+      TTransport  transport = new TSocket(ServerCheckList.get(i).getIP(), Integer.parseInt(ServerCheckList.get(i).getPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
       ServerHandler.Client client = new ServerHandler.Client(protocol);
       //Try to connect
       transport.open();
-      int NextVerNum = client.getVersion(filename);
+      int NextVerNum = client.getVersion(Filename);
       transport.close();
       if(tarVer<NextVerNum){
         tarVer = NextVerNum;
-        tarSer = ServerCheckList[i];
+        tarSer = ServerCheckList.get(i);
       }
     }
     return tarSer;
   }
 
-  public
+  public synchronized void ExecReqs(){
+    for (int i = 0; i < reqs.size(); i++)
+    REQ r = reqs.get(i);
+    if(FileOP.get(r.getFilename())==null){
+      ExecReq(r);
+    }
+    else if(FileOP.get(r.getFilename()).equals("W")){
+      continue;
+    } else if (FileOP.get(r.getFilename())[0].equals("R")){
+      if(r.getOP().equals("R")){// R after R; go for it
+        FileOP.put(r.getFilename(),FileOP.get(r.getFilename())+"R")
+        ExecReq(r);
+      } else if(r.getOP().equals("W")){// W after R; go for it
+        continue;
+      }
+    }
+  }
+  public void ExecR(REQ r){
+    Server s = find_newest(getQuo(NR),r.getFilename());
+
+    TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+    ServerHandler.Client client = new ServerHandler.Client(protocol);
+    //Try to connect
+    transport.open();
+    String ret = client.readback(r);
+    if(ret.equals("ACK")){
+      String flag = FileOP.get(r.getFilename()).substring(1);
+      if(flag.equals("")){
+        FileOP.remove(r.getFilename());
+      } else{
+        FileOP.put(r.getFilename(), flag);
+      }
+    }else{
+      System.out.println(ret);
+      System.out.println("ExecR: This should not happen!");
+    }
+    transport.close();
+  }
+
+  public void ExecW(REQ r){
+    ArrayList<Server> QW = getQuo(NW);
+    Server s = find_newest(QW,r.getFilename());
+
+    TTransport  transport = new TSocket(s.get(i).IP, Integer.parseInt(s.get(i).Port));
+    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+    ServerHandler.Client client = new ServerHandler.Client(protocol);
+    //Try to connect
+    transport.open();
+    String ret = client.readback(r);
+    if(ret.equals("ACK")){
+      String flag = FileOP.get(r.getFilename()).substring(1);
+      if(flag.equals("")){
+        FileOP.remove(r.getFilename());
+      } else{
+        FileOP.put(r.getFilename(), flag);
+      }
+    }else{
+      System.out.println(ret);
+      System.out.println("ExecR: This should not happen!");
+    }
+    transport.close();
+
+    for(int i=0; i<QW.size();i++){
+      Server s_ = QW.get(i);
+      if(!s_.getIP()+s_.getPort().equals(s.getIP()+s.getPort())){
+        TTransport  transport = new TSocket(s_.get(i).IP, Integer.parseInt(s_.get(i).Port));
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        ServerHandler.Client client = new ServerHandler.Client(protocol);
+        //Try to connect
+        transport.open();
+        client.updateVer(r);
+        transport.close();
+      }
+    }
+
+
+  }
 }
