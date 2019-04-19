@@ -33,7 +33,7 @@ public class ServerWorkHandler implements ServerWork.Iface
   // HashMap<String, Integer> FileVersion = new HashMap<String, Integer>();
   // HashMap<String, String> FileContent = new HashMap<String, String>();
   @Override
-  public void request(String filename, String clientInfo, String request)
+  public void request(REQ r)
   {
     try{
       TTransport  transport = new TSocket(CoordinatorIP, Integer.parseInt(CoordinatorPort));
@@ -41,7 +41,7 @@ public class ServerWorkHandler implements ServerWork.Iface
       CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
       //Try to connect
       transport.open();
-      result2 = client.forwardReq(filename, clientInfo, request);
+      result2 = client.forwardReq(r);
       transport.close();
 
     } catch(TException e) {
@@ -51,6 +51,9 @@ public class ServerWorkHandler implements ServerWork.Iface
   @Override
   public int getVersion(String filename){
     String ALine = readFile(filename); // content:"filename/version"
+    if(ALine.equals("NACK")){
+      return -1;
+    }
     String[] AList = ALine.split("/");
     reader.close();
 
@@ -132,10 +135,12 @@ public class ServerWorkHandler implements ServerWork.Iface
   public String readFile(String filename) {
      // String expected_value = "Hello world";
      String file ="./"+IP+":_"+Port+"/"+filename;
-
-     BufferedReader reader = new BufferedReader(new FileReader(file));
-     String ALine = reader.readLine();// content:"filename/version"
-     reader.close();
+     String ALine = "NACK";
+     try{
+       BufferedReader reader = new BufferedReader(new FileReader(file));
+       ALine = reader.readLine();// content:"filename/version"
+       reader.close();
+     }catch(Exception e) {}
 
     return ALine;
   }

@@ -32,8 +32,33 @@ public class Coordinator {
   public static CoordinatorWork.Processor processor;
   public static void main(String [] args) {
 
+    if(args.size()<4){
+      System.out.println("Want 4 arguments!\nString CoordinatorIP, String CoordinatorPort, int NR, int NW");
+      System.exit(-1);
+    }
 
+    handler = new CoordinatorWorkHandler(args[0],args[1],Integer.toString(args[2]), Integer.toString(args[3]));
 
+    Runnable PeriodSYNC = new Runnable() {
+        public void run() {
+            ToSYNC();
+        }
+    };
+    Runnable ProcRequests = new Runnable() {
+        public void run() {
+          // System.out.println(args[0]);
+            ProcessingRequests();
+        }
+    };
+    Runnable CoorSer = new Runnable() {
+        public void run() {
+          // System.out.println(args[0]);
+            simple(processor, handler.getIP());
+        }
+    };
+    new Thread(PeriodSYNC).start();
+    new Thread(ProcRequests).start();
+    new Thread(CoorSer).start();
   }
 
   public static void simple(WorkWithNode.Processor processor, int port) {
@@ -67,10 +92,17 @@ public class Coordinator {
     }
   }
   public void ProcessingRequests(){
-    if(handler.getSYNC()){
-      handler.Sync();
-    } else {
-      handler.ExecReqs();
+    while(true){
+      try {
+        Thread.sleep(500);
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+      if(handler.getSYNC()){
+        handler.Sync();
+      } else {
+        handler.ExecReqs();
+      }
     }
   }
 }

@@ -42,6 +42,13 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
   Boolean SYNC = false;
 
+  CoordinatorWorkHandler(String CoordinatorIP, String CoordinatorPort, int NR, int NW) {
+    this.CoordinatorIP = CoordinatorIP;
+    this.CoordinatorPort = CoordinatorPort;
+    this.NR = NR;
+    this.NW = NW;
+  }
+  // !!!!!!!!!!!!!!!!!!!! synchronized adding request; lock on requests?
   public synchronized void forwardReq(REQ r){
     reqs.add(r);
   }
@@ -77,7 +84,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
 
   // ServerCheckList: formed by getQuo; with size NR or NW
   public Server find_newest(ArrayList<Server> ServerCheckList, String Filename){
-    Server tarSer = ServerCheckList.get(0);
+    Server tarSer = null;
     int tarVer = 0;
     for (int i=0;i<ServerCheckList.size();i++){
       try{
@@ -138,8 +145,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       } catch(Exception e){
         e.printStackTrace();
       }
-
     }
+    SYNC=false;
   }
 
   // do not need threading; this will only loop in coordinator's main.
@@ -148,8 +155,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     for (int i = 0; i < reqs.size(); i++)
     REQ r = reqs.get(i);
     if(FileOP.get(r.getFilename())==null){// there is no op running on this file
-      if(r.getOP().equals("R")){
-        ExecR(r); // here need threading!!!!!!!!!!!!!!!!!!!!!
+      if(r.getOP().equals("R")){ // the req want to Read
 
         Runnable Reading = new Runnable() {
             public void run() {
@@ -158,25 +164,22 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         };
         new Thread(Reading).start();
 
-      } else if(r.getOP().equals("W")){
-        // ExecW(r); // here need threading!!!!!!!!!!!!!!!!!!!!!!
-        FilestoSYNC.add(r);
+      } else if(r.getOP().equals("W")){ // the req want to Write
+        FilestoSYNC.add(r);// adding record for SYNC
         Runnable Writing = new Runnable() {
             public void run() {
                 ExecW(r);
             }
         };
         new Thread(Writing).start();
-
       }
     }
-    else if(FileOP.get(r.getFilename()).equals("W")){// there is a W running on this file
-      continue;
-    } else if (FileOP.get(r.getFilename())[0].equals("R")){
-      if(r.getOP().equals("R")){// R after R; go for it
-        FileOP.put(r.getFilename(),FileOP.get(r.getFilename())+"R")
-        // ExecR(r);// here need threading!!!!!!!!!!!!!!!!!!!!!!
-
+    else if(FileOP.get(r.getFilename()).equals("W")){// there is a W op running on this file
+      continue; // cannot do anything
+    } else if (FileOP.get(r.getFilename())[0].equals("R")){// there is a R op running on this file
+      if(r.getOP().equals("R")){ // R after R; go for it
+        FileOP.put(r.getFilename(),FileOP.get(r.getFilename())+"R"); // adding count for R op on the file
+                                                                    // note: # of 'R' = # of R op on the file
         Runnable Reading = new Runnable() {
             public void run() {
                 ExecR(r);
@@ -193,30 +196,54 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // for threading.
   public void ExecR(REQ r){
     Server s = find_newest(getQuo(NR),r.getFilename());
-
-    TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
-    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-    ServerHandler.Client client = new ServerHandler.Client(protocol);
-    //Try to connect
-    transport.open();
-    String ret = client.readback(r);
-    if(ret.equals("ACK")){
+    if(s==null{
       String flag = FileOP.get(r.getFilename()).substring(1);
       if(flag.equals("")){
         FileOP.remove(r.getFilename());
       } else{
         FileOP.put(r.getFilename(), flag);
       }
-    }else{
-      System.out.println(ret);
-      System.out.println("ExecR: This should not happen!");
+      System.out.println("ExecR: This file does not exist!");
+      return;
     }
-    transport.close();
+
+
+
+    try{
+      TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      ServerHandler.Client client = new ServerHandler.Client(protocol);
+      //Try to connect
+      transport.open();
+      String ret = client.readback(r);
+      if(ret.equals("ACK")){
+        String flag = FileOP.get(r.getFilename()).substring(1);
+        if(flag.equals("")){
+          FileOP.remove(r.getFilename());
+        } else{
+          FileOP.put(r.getFilename(), flag);
+        }
+      }else{
+        System.out.println(ret);
+        System.out.println("ExecR: This should not happen!");
+      }
+      transport.close();
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
   }
 
   public void ExecW(REQ r){
     ArrayList<Server> QW = getQuo(NW);
     Server s = find_newest(QW,r.getFilename());
+
+    if(s==null{
+      FileOP.remove(r.getFilename()); //!!!!!!!!!!!!!! here can only use ConcurrentHashMap. Is this fulfilling the requirement?
+      System.out.println("ExecR: This file does not exist!");
+      return;
+    }
+
+
     int NewestVerNum;
 
     TTransport  transport = new TSocket(s.get(i).getIP(), Integer.parseInt(s.get(i).getPort()));
