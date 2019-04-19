@@ -38,6 +38,7 @@ public class Coordinator {
     }
 
     handler = new CoordinatorWorkHandler(args[0],args[1],Integer.toString(args[2]), Integer.toString(args[3]));
+    processor = new CoordinatorWork.Processor(handler);
 
     Runnable PeriodSYNC = new Runnable() {
         public void run() {

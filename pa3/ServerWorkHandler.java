@@ -25,13 +25,21 @@ import java.util.concurrent.*;
 
 public class ServerWorkHandler implements ServerWork.Iface
 {
-  String IP;
-  String Port;
-  String CoordinatorIP;
-  String CoordinatorPort;
+  private String IP;
+  private String Port;
+  private String CoordinatorIP;
+  private String CoordinatorPort;
   // <filename, version>
   // HashMap<String, Integer> FileVersion = new HashMap<String, Integer>();
   // HashMap<String, String> FileContent = new HashMap<String, String>();
+
+  ServerWorkHandler(String IP, String Port, String CoordinatorIP, String CoordinatorPort;){
+    this.IP = IP;
+    this.Port = Port;
+    this.CoordinatorIP = CoordinatorIP;
+    this.CoordinatorPort = CoordinatorPort;
+  }
+
   @Override
   public void request(REQ r)
   {
@@ -41,7 +49,7 @@ public class ServerWorkHandler implements ServerWork.Iface
       CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
       //Try to connect
       transport.open();
-      result2 = client.forwardReq(r);
+      client.forwardReq(r);
       transport.close();
 
     } catch(TException e) {
@@ -68,7 +76,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
     //Try to connect
     transport.open();
-    result2 = client.printRet("ACKR/filename: "+filename+", "+readFile(r.getFilename()));
+    client.printRet("ACKR/filename: "+filename+", "+readFile(r.getFilename()));
     transport.close();
     return "ACK";
   }
@@ -82,7 +90,7 @@ public class ServerWorkHandler implements ServerWork.Iface
       CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
       //Try to connect
       transport.open();
-      result2 = client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));
+      client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));
       transport.close();
     } catch (Exception e){
       e.printStackTrace();
@@ -91,23 +99,25 @@ public class ServerWorkHandler implements ServerWork.Iface
   }
 
   public void writeFile(REQ r){
-    String directoryName = "./"+IP+":_"+Port;
-    File directory = new File(directoryName);
-    if (! directory.exists()){
-        directory.mkdir();
-    }
+    // String directoryName = "./"+IP+":_"+Port;
+    // File directory = new File(directoryName);
+    // if (! directory.exists()){
+    //     directory.mkdir();
+    // }
+    //
+    // File file = new File(directoryName + "/" + r.getFilename());
+    // try{
+    //     FileWriter fw = new FileWriter(file.getAbsoluteFile());
+    //     BufferedWriter bw = new BufferedWriter(fw);
+    //     bw.write(r.getContent()+"/"+(getVersion(r.getFilename())+1));
+    //     bw.close();
+    // }
+    // catch (IOException e){
+    //     e.printStackTrace();
+    //     System.exit(-1);
+    // }
+    overWriteFile(r, getVersion(r.getFilename())+1);
 
-    File file = new File(directoryName + "/" + r.getFilename());
-    try{
-        FileWriter fw = new FileWriter(file.getAbsoluteFile());
-        BufferedWriter bw = new BufferedWriter(fw);
-        bw.write(r.getContent()+"/"+(getVersion(r.getFilename())+1));
-        bw.close();
-    }
-    catch (IOException e){
-        e.printStackTrace();
-        System.exit(-1);
-    }
   }
   @Override
   public String overWriteFile(REQ r, int NewestVerNum){
