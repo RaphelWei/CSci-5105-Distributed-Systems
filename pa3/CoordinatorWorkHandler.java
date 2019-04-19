@@ -39,23 +39,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // <Filename,OP>
   // note: for R, the number of char R means how many R op working.
   ConcurrentHashMap<String, String> FileOP = new ConcurrentHashMap<String, String>();
+  ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
   Boolean SYNC = false;
-
-  // @Override
-  // public void request(String filename, String clientInfo, String request)
-  // {
-  //   try{
-  //     TTransport  transport = new TSocket(CoordinatorIP, Integer.parseInt(CoordinatorPort));
-  //     TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-  //     WorkWithNode.Client client = new WorkWithNode.Client(protocol);
-  //     //Try to connect
-  //     transport.open();
-  //     result2 = client.forwardReq(filename, clientInfo, request);
-  //     transport.close();
-  //
-  //   } catch(TException e) {
-  //   }
-  // }
 
   public synchronized void forwardReq(REQ r){
     reqs.add(r);
@@ -114,19 +99,46 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     return tarSer;
   }
 
-  public void SYNC() {
-    for (int i = 0; i < ServerList.size(); i++){
+  public void SyncOlder(ArrayList<Server> ServerCheckList, String Filename, int NewestVerNum){
+    // Server tarSer = ServerCheckList.get(0);
+    // int tarVer = 0;
+    for (int i=0;i<ServerCheckList.size();i++){
       try{
-        TTransport  transport = new TSocket(ServerList.get(i).getIP(), Integer.parseInt(ServerList.get(i).getPort()));
+        TTransport  transport = new TSocket(ServerCheckList.get(i).getIP(), Integer.parseInt(ServerCheckList.get(i).getPort()));
         TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
         ServerHandler.Client client = new ServerHandler.Client(protocol);
         //Try to connect
         transport.open();
         int NextVerNum = client.getVersion(Filename);
+        if(NewestVerNum<NextVerNum){
+          String ret = client.overWriteFile(r, NewestVerNum);
+        }
         transport.close();
       } catch(Exception e){
         e.printStackTrace();
       }
+    }
+    // return tarSer;
+  }
+
+  public void SYNC() {
+    if(FileOP.isEmpty()){return;}
+    int NewestVerNum;
+    for(int i=0; i<FilestoSYNC.size();i++){
+      Server newest = find_newest(ServerList, r.getFilename());
+      try{
+        TTransport  transport = new TSocket(newest.getIP(), Integer.parseInt(newest.getPort()));
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        ServerHandler.Client client = new ServerHandler.Client(protocol);
+        //Try to connect
+        transport.open();
+        NewestVerNum = client.getVersion(r.getFilename());
+        SyncOlder(ServerList,r.getFilename(),NewestVerNum);
+        transport.close();
+      } catch(Exception e){
+        e.printStackTrace();
+      }
+
     }
   }
 
@@ -148,7 +160,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
 
       } else if(r.getOP().equals("W")){
         // ExecW(r); // here need threading!!!!!!!!!!!!!!!!!!!!!!
-
+        FilestoSYNC.add(r);
         Runnable Writing = new Runnable() {
             public void run() {
                 ExecW(r);
@@ -205,23 +217,20 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   public void ExecW(REQ r){
     ArrayList<Server> QW = getQuo(NW);
     Server s = find_newest(QW,r.getFilename());
+    int NewestVerNum;
 
-    TTransport  transport = new TSocket(s.get(i).IP, Integer.parseInt(s.get(i).Port));
+    TTransport  transport = new TSocket(s.get(i).getIP(), Integer.parseInt(s.get(i).getPort()));
     TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
     ServerHandler.Client client = new ServerHandler.Client(protocol);
     //Try to connect
     transport.open();
-    String ret = client.readback(r);
+    String ret = client.writeback(r);
+    NewestVerNum = client.getVersion(Filename);
     if(ret.equals("ACK")){
-      String flag = FileOP.get(r.getFilename()).substring(1);
-      if(flag.equals("")){
-        FileOP.remove(r.getFilename()); //!!!!!!!!!!!!!! here can only use ConcurrentHashMap. Is this fulfilling the requirement?
-      } else{
-        FileOP.put(r.getFilename(), flag);
-      }
+      FileOP.remove(r.getFilename()); //!!!!!!!!!!!!!! here can only use ConcurrentHashMap. Is this fulfilling the requirement?
     }else{
       System.out.println(ret);
-      System.out.println("ExecR: This should not happen!");
+      System.out.println("ExecW: This should not happen!");
     }
     transport.close();
 
@@ -233,7 +242,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         ServerHandler.Client client = new ServerHandler.Client(protocol);
         //Try to connect
         transport.open();
-        client.updateVer(r);
+        client.overWriteFile(r, NewestVerNum);
         transport.close();
       }
     }

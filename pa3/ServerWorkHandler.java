@@ -73,13 +73,17 @@ public class ServerWorkHandler implements ServerWork.Iface
   public String writeback(REQ r){
     writeFile(r);
 
-    TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
-    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-    CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
-    //Try to connect
-    transport.open();
-    result2 = client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));
-    transport.close();
+    try{
+      TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
+      //Try to connect
+      transport.open();
+      result2 = client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));
+      transport.close();
+    } catch (Exception e){
+      e.printStackTrace();
+    }
     return "ACK";
   }
 
@@ -102,6 +106,27 @@ public class ServerWorkHandler implements ServerWork.Iface
         System.exit(-1);
     }
   }
+  @Override
+  public String overWriteFile(REQ r, int NewestVerNum){
+    String directoryName = "./"+IP+":_"+Port;
+    File directory = new File(directoryName);
+    if (! directory.exists()){
+        directory.mkdir();
+    }
+
+    File file = new File(directoryName + "/" + r.getFilename());
+    try{
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        bw.write(r.getContent()+"/"+NewestVerNum);
+        bw.close();
+    }
+    catch (IOException e){
+        e.printStackTrace();
+        System.exit(-1);
+    }
+    return "ACK";
+  }
 
   // assuming the content is a line saying "filename/version"
   public String readFile(String filename) {
@@ -114,4 +139,18 @@ public class ServerWorkHandler implements ServerWork.Iface
 
     return ALine;
   }
+
+  // public List<String> FilesLocal(){
+  //   List<String> results = new ArrayList<String>();
+  //
+  //   File[] files = new File("/path/to/the/directory").listFiles();
+  //   //If this pathname does not denote a directory, then listFiles() returns null.
+  //
+  //   for (File file : files) {
+  //       if (file.isFile()) {
+  //           results.add(file.getName());
+  //       }
+  //   }
+  //   return results;
+  // }
 }

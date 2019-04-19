@@ -56,7 +56,16 @@ public class Coordinator {
           e.printStackTrace();
       }
   }
-
+  public void ToSYNC(){
+    while(true){
+      try {
+        Thread.sleep(2000);
+        handler.setSYNC(true);
+      } catch (Exception e) {
+        System.out.println(e);
+      }
+    }
+  }
   public void ProcessingRequests(){
     if(handler.getSYNC()){
       handler.Sync();
