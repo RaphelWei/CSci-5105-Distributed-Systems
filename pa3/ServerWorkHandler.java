@@ -33,7 +33,7 @@ public class ServerWorkHandler implements ServerWork.Iface
   // HashMap<String, Integer> FileVersion = new HashMap<String, Integer>();
   // HashMap<String, String> FileContent = new HashMap<String, String>();
 
-  ServerWorkHandler(String IP, String Port, String CoordinatorIP, String CoordinatorPort;){
+  ServerWorkHandler(String IP, String Port, String CoordinatorIP, String CoordinatorPort){
     this.IP = IP;
     this.Port = Port;
     this.CoordinatorIP = CoordinatorIP;
@@ -46,7 +46,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     try{
       TTransport  transport = new TSocket(CoordinatorIP, Integer.parseInt(CoordinatorPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
+      CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
       //Try to connect
       transport.open();
       client.forwardReq(r);
@@ -73,7 +73,7 @@ public class ServerWorkHandler implements ServerWork.Iface
 
     TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
     TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-    CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
+    CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
     //Try to connect
     transport.open();
     client.printRet("ACKR/filename: "+filename+", "+readFile(r.getFilename()));
@@ -87,7 +87,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     try{
       TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      CoordinatorHandler.Client client = new CoordinatorHandler.Client(protocol);
+      CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
       //Try to connect
       transport.open();
       client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));

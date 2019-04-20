@@ -25,6 +25,14 @@ import java.util.concurrent.*;
 
 public class ClientWorkHandler implements ClientWork.Iface
 {
+  private String IP;
+  private String Port;
+
+  ClientWorkHandler(String IP, String Port){
+    this.IP=IP;
+    this.Port=Port;
+  }
+
   @Override
   public void printRet(String ret){
     System.out.println(ret);

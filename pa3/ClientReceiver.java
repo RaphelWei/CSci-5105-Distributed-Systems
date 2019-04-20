@@ -27,13 +27,13 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 
 
-public class Server {
-  public static ServerWorkHandler handler;
-  public static ServerWork.Processor processor;
+public class ClientReceiver {
+  public static ClientWorkHandler handler;
+  public static ClientWork.Processor processor;
   public static void main(String [] args) {
 
-    if(args.size()<3){
-      System.out.println("Want 3 arguments!: MyPort CoordinatorIP CoordinatorPort");
+    if(args.size()<1){
+      System.out.println("Want 1 arguments!\nMyPort");
       System.exit(-1);
     }
 
@@ -41,15 +41,8 @@ public class Server {
     System.out.println("I am at IP:   "+myIP);
     System.out.println("I am at Port: "+args[0]);
 
-    handler = new ServerWorkHandler(myIP, args[0],args[1], args[2]);
-    processor = new ServerWork.Processor(handler);
-
-
-    String directoryName = "./"+myIP+":_"+args[0];
-    File directory = new File(directoryName);
-    if (! directory.exists()){
-        directory.mkdir();
-    }
+    handler = new ClientWorkHandler(myIP, args[0]);
+    processor = new ClientWork.Processor(handler);
 
 
     Runnable ThreadingServer = new Runnable() {
@@ -58,8 +51,6 @@ public class Server {
         }
     };
     new Thread(ThreadingServer).start();
-
-    ToJoin();
   }
 
   public static void StartServer(ServerWork.Processor processor, int port) {
@@ -82,20 +73,4 @@ public class Server {
           e.printStackTrace();
       }
   }
-
-  public static void ToJoin(){
-    try{
-      TTransport  transport = new TSocket(handler.getCoordinatorIP(), Integer.parseInt(handler.getCoordinatorPort()));
-      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
-      //Try to connect
-      transport.open();
-      client.join(new Node(handler.getIP(), handler.getPort()));
-      transport.close();
-
-    } catch(Exception e){
-      e.printStackTrace();
-    }
-  }
-
 }
