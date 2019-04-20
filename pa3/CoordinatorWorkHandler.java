@@ -36,10 +36,12 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   int N;
   // REQ:OP;Filename;Content;ClientIP;ClientPort
   // ArrayList<REQ> reqs = new ArrayList<REQ>();
-  ConcurrentLinkedQueue<REQ> reqs = new ConcurrentLinkedQueue<REQ>();
+  // ConcurrentLinkedQueue<REQ> reqs = new ConcurrentLinkedQueue<REQ>();
   // <Filename,OP>
   // note: for R, the number of char R means how many R op working.
-  ConcurrentHashMap<String, String> FileOP = new ConcurrentHashMap<String, String>();
+  // ConcurrentHashMap<String, String> FileOP = new ConcurrentHashMap<String, String>();
+
+  ConcurrentHashMap<String, ArrayList<REQ>> reqs = new ConcurrentHashMap<String, ArrayList<REQ>>();
   // <filename, REQ>
   ConcurrentHashMap<String, REQ> FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   // ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
@@ -55,11 +57,15 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // !!!!!!!!!!!!!!!!!!!! synchronized adding request; lock on requests?
   @Override
   public synchronized void forwardReq(REQ r){
-    reqs.add(r);
+    if(reqs.get(r.getFilename())==null){
+      reqs.put(r.getFilename(), new ArrayList<REQ>(r));
+    } else {
+      reqs.put(r.getFilename(), reqs.get(r.getFilename()).add(r));
+    }
   }
 
   @Override
-  public void join(Node S){
+  public synchronized void join(Node S){
     ServerList.add(S);
   }
 
@@ -112,8 +118,6 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   }
 
   public void SyncOlder(ArrayList<Node> ServerCheckList, String Filename, REQ r, int NewestVerNum){
-    // Node tarSer = ServerCheckList.get(0);
-    // int tarVer = 0;
     for (int i=0;i<ServerCheckList.size();i++){
       try{
         TTransport  transport = new TSocket(ServerCheckList.get(i).getIP(), Integer.parseInt(ServerCheckList.get(i).getPort()));
@@ -130,14 +134,9 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         e.printStackTrace();
       }
     }
-    // return tarSer;
   }
 
   public void SYNC() {
-    if(FileOP.isEmpty()){
-      SYNC = false;
-      return;
-    }
     Iterator it = FilestoSYNC.entrySet().iterator();
     int NewestVerNum;
     while(it.hasNext()){
@@ -158,6 +157,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         NewestVerNum = client.getVersion(pair.getKey());
         if(NewestVerNum==-1){ // the written file was removed !!!!!!!!!!!!!!!!!
           System.out.println("SYNC: not right! I cannot find a file I wrote before");
+          System.out.println("SYNC: going to rewrite the missing file with version 0");
           NewestVerNum = 0;
         }
         SyncOlder(ServerList,pair.getKey(),pair.getValue(),NewestVerNum);
@@ -196,62 +196,120 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   }
 
-  // do not need threading; this will only loop in coordinator's main.
-  // !!!!!!!!!!!!!!!!!!!!!!! I need to remove item in reqs, which is not thread-safe as I may add request at any time
-  // !!!!!!!!!!!!!!!!!!!!!!! I added a synchronized queue, which may violate the lock demand
+  public static ConcurrentHashMap<String, , ArrayList<REQ>> copy(
+    ConcurrentHashMap<String, ArrayList<REQ>> original)
+{
+    ConcurrentHashMap<String, ArrayList<REQ>> copy = new ConcurrentHashMap<String, ArrayList<REQ>>();
+    for (Map.Entry<String, ArrayList<REQ>> entry : original.entrySet())
+    {
+        copy.put(entry.getKey(),
+           // Or whatever List implementation you'd like here.
+           new ArrayList<REQ>(entry.getValue()));
+    }
+    return copy;
+}
+
+
+  // !!!!!!!!!!!!!!!!!!!!!!! now the ConcurrentHashMap is only to sync between add request and (deep)copy requests
   public void ExecReqs(){
-    // if(SYNC){return;}
-// System.out.println("ExecReqs");
-    Iterator iterator = reqs.iterator();
-    while (iterator.hasNext()) {
-// System.out.println("while loop");
-      REQ r = iterator.next();
-// System.out.println("Request Content: "+r.getOP()+" on "+r.getFilename());
-      if(FileOP.get(r.getFilename())==null){// there is no op running on this file
-// System.out.println("there is no op running on this file: "+r.getFilename());
+    ConcurrentHashMap<String, ArrayList<REQ>> reqsUpToNow = copy(reqs);
+    reqs = new ConcurrentHashMap<String, ArrayList<REQ>>();
+    ArrayList<Thread> threads = new ArrayList<Thread>;
+    Iterator it = reqsUpToNow.entrySet().iterator();
+    while (it.hasNext()) {
+        Map.Entry pair = (Map.Entry)it.next();
+        Runnable Reading = new Runnable() {
+            public void run() {
+                ThreadingforEachFile(pair.getValue());
+            }
+        };
+        Thread OPsOnEachFile = new Thread(Reading);
+        OPsOnEachFile.start();
+        threads.add(OPsOnEachFile);
+    }
+    for(int i = 0; i < threads.size(); i++){
+      threads.get(i).join();
+    }
+  }
+
+  public void ThreadingforEachFile(ArrayList<REQ> reqsOfAFile){
+    ArrayList<Thread> threads = new ArrayList<Thread>; // for join and count number of R
+    String PreviousOP = "";
+    for (int j = 0; j < reqs.size(); j++) {
+      REQ r = reqsOfAFile.get(j);
+      if(PreviousOP.euqls("")){// there is no op before
         if(r.getOP().equals("R")){ // the req want to Read
-// System.out.println("Request: R on "+r.getFilename());
           Runnable Reading = new Runnable() {
               public void run() {
                   ExecR(r);
               }
           };
-          new Thread(Reading).start();
-          reqs.remove(r);
+          Thread ROP = new Thread(Reading);
+          ROP.start();
+          threads.add(ROP);
+          PreviousOP = "R";
+
         } else if(r.getOP().equals("W")){ // the req want to Write
-// System.out.println("Request: W on "+r.getFilename());
-          FilestoSYNC.put(r.getFilename(), r);// adding record for SYNC
+
           Runnable Writing = new Runnable() {
               public void run() {
                   ExecW(r);
               }
           };
-          new Thread(Writing).start();
-          reqs.remove(r);
-        }
+          Thread WOP = new Thread(Writing);
+          WOP.start();
+          threads.add(WOP);
+          PreviousOP = "W";
 
-      } else if (FileOP.get(r.getFilename()).equals("W")){// there is a W op running on this file
-// System.out.println("there is a W op running on this file: "+r.getFilename());
-        continue; // cannot do anything
-      } else if (FileOP.get(r.getFilename())[0].equals("R")){// there is a R op running on this file
-// System.out.println("there is a R op running on this file: "+r.getFilename());
+          // adding record for SYNC
+          FilestoSYNC.add(r);
+        }
+      } else if (PreviousOP.euqls("W")){// there is a W op before
+        for(int i = 0; i < threads.size(); i++){
+          threads.get(i).join();
+        }
+        threads = new ArrayList<Thread>;
+
+      } else if (PreviousOP.euqls("R")){// there is a R op running on this file
         if(r.getOP().equals("R")){ // R after R; go for it
-// System.out.println("After R, Request: R on "+r.getFilename());
-          FileOP.put(r.getFilename(),FileOP.get(r.getFilename())+"R"); // adding count for R op on the file
-                                                                      // note: # of 'R' = # of R op on the file
           Runnable Reading = new Runnable() {
               public void run() {
                   ExecR(r);
               }
           };
-          new Thread(Reading).start();
-          reqs.remove(r);
+          Thread ROP = new Thread(Reading);
+          ROP.start();
+          threads.add(ROP);
+          PreviousOP = "R";
 
-        } else if(r.getOP().equals("W")){// W after R; next loop
-// System.out.println("After W, Request: R on "+r.getFilename());
-          continue;
+        } else if(r.getOP().equals("W")){// W after R; wait for all R
+
+          // join all R before
+          for(int i = 0; i < threads.size(); i++){
+            threads.get(i).join();
+          }
+          threads = new ArrayList<Thread>;
+
+          // do the W
+          Runnable Writing = new Runnable() {
+              public void run() {
+                  ExecW(r);
+              }
+          };
+          Thread WOP = new Thread(Writing);
+          WOP.start();
+          threads.add(WOP);
+          PreviousOP = "W";
+
+          // adding record for SYNC
+          FilestoSYNC.add(r);
         }
       }
+    }
+
+    // take care the last several R or single W
+    for(int i = 0; i < threads.size(); i++){
+      threads.get(i).join();
     }
   }
 
@@ -275,12 +333,6 @@ System.out.println("NACKClient");
 System.out.println("ExecR");
     Node s = find_newest(getQuo(NR),r.getFilename());
     if(s==null{ // cannot find the file or the file is removed
-      String flag = FileOP.get(r.getFilename()).substring(1); // take out a string like "RRRR" except the first 'R'
-      if(flag.equals("")){ // no other R op working
-        FileOP.remove(r.getFilename());
-      } else{
-        FileOP.put(r.getFilename(), flag); // remove the R flag for this request
-      }
       System.out.println("ExecR: This file does not exist!");
       String str = ", does not exist.";
       NACKClient(r, str);
@@ -294,17 +346,6 @@ System.out.println("ExecR");
       //Try to connect
       transport.open();
       String ret = client.readback(r);
-      if(ret.equals("ACK")){
-        String flag = FileOP.get(r.getFilename()).substring(1); // take out a string like "RRRR" except the first 'R'
-        if(flag.equals("")){  // the original string is "R", the one got is ""
-          FileOP.remove(r.getFilename()); // no other R op working
-        } else{
-          FileOP.put(r.getFilename(), flag); // remove the R flag for this request
-        }
-      }else{
-        System.out.println(ret);
-        System.out.println("ExecR: This should not happen!");
-      }
       transport.close();
     } catch (Exception e) {
         e.printStackTrace();
@@ -317,7 +358,6 @@ System.out.println("ExecW");
 System.out.println("QW size: "+ QW.size());
     Node s = find_newest(QW, r.getFilename());
     if(s==null{
-      FileOP.remove(r.getFilename()); //!!!!!!!!!!!!!! here can only use ConcurrentHashMap. Is this fulfilling the requirement?
       System.out.println("ExecW: This file does not exist!");
       String str = ", does not exist.";
       NACKClient(r, str);
@@ -332,13 +372,7 @@ System.out.println("QW size: "+ QW.size());
     //Try to connect
     transport.open();
     String ret = client.writeback(r);
-    NewestVerNum = client.getVersion(Filename);
-    if(ret.equals("ACK")){
-      FileOP.remove(r.getFilename()); //!!!!!!!!!!!!!! here can only use ConcurrentHashMap. Is this fulfilling the requirement?
-    }else{
-      System.out.println(ret);
-      System.out.println("ExecW: This should not happen!");
-    }
+    NewestVerNum = client.getVersion(r.getFilename());
     transport.close();
 
     for(int i=0; i<QW.size();i++){

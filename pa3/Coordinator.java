@@ -36,8 +36,8 @@ public class Coordinator {
 
   public static void main(String [] args) {
 
-    if(args.size()<6){
-      System.out.println("Want 6 arguments!: CoordinatorIP CoordinatorPort NR NW N ServerPort");
+    if(args.size()<5){
+      System.out.println("Want 5 arguments!: CoordinatorPort NR NW N ServerPort");
       System.exit(-1);
     }
     int NR = Integer.toString(args[2]);
@@ -49,8 +49,13 @@ public class Coordinator {
       System.exit(-1);
     }
 
+    String myIP = InetAddress.getLocalHost().getHostAddress();
+    System.out.println("I am at IP:   "+myIP);
+    System.out.println("I am at Port: "+args[5]);
+
+
     // coordinator init
-    CoordinatorHandler = new CoordinatorWorkHandler(args[0],args[1],Integer.toString(args[2]), Integer.toString(args[3]));
+    CoordinatorHandler = new CoordinatorWorkHandler(myIP,args[0],Integer.toString(args[1]), Integer.toString(args[2]), Integer.toString(args[3]));
     CoordinatorProcessor = new CoordinatorWork.Processor(CoordinatorHandler);
 
     Runnable PeriodSYNC = new Runnable() {
@@ -76,11 +81,8 @@ public class Coordinator {
 
 
     // server init
-    String myIP = InetAddress.getLocalHost().getHostAddress();
-    System.out.println("I am at IP:   "+myIP);
-    System.out.println("I am at Port: "+args[5]);
 
-    SeverHandler = new ServerWorkHandler(myIP, args[5],args[0], args[1]);
+    SeverHandler = new ServerWorkHandler(myIP, args[4], myIP, args[0]);
     SeverProcessor = new ServerWork.Processor(handler);
 
     Runnable ThreadingServer = new Runnable() {
