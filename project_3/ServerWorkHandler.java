@@ -5,7 +5,7 @@ public class ServerWorkHandler {
     }
 
     @Override
-    public Server getRandomNode() {
+    public Node getRandomNode() {
     	Random r = new Random();
     	int numOfServer = Coordinator.serverList.size();
     	

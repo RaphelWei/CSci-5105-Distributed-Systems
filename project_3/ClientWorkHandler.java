@@ -23,11 +23,30 @@ import org.apache.thrift.transport.TServerTransport;
 
 import java.util.concurrent.*;
 
-public class ClientWorkHandler implements ClientWork.Iface
-{
-  @Override
-  public void printRet(String ret){
-    System.out.println(ret);
-  }
+public class ClientWorkHandler implements ClientWork.Iface {
+	private String ip;
+	private String port;
+	private int count = 0;
+	private int numOfOps = 0;
+	private int startTime = 0;
+	public ClientWorkHandler(String ip, String port) {
+		this.ip = ip;
+		this.port = port;
+	}
+
+
+  	@Override
+  	public Synchronized void printRet(String ret){
+    	System.out.println(ret);
+    	count++;
+  	}
+
+  	@Override
+  	public void setParams(int numOfOps, int startTime) {
+  		this.numOfOps = numOfOps;
+  		this.startTime = startTime;
+  	}
+
+
 
 }
