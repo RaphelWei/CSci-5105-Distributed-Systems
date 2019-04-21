@@ -218,12 +218,12 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     Iterator it = reqsUpToNow.entrySet().iterator();
     while (it.hasNext()) {
         Map.Entry pair = (Map.Entry)it.next();
-        Runnable Reading = new Runnable() {
+        Runnable ReadingOPs = new Runnable() {
             public void run() {
                 ThreadingforEachFile(pair.getValue());
             }
         };
-        Thread OPsOnEachFile = new Thread(Reading);
+        Thread OPsOnEachFile = new Thread(ReadingOPs);
         OPsOnEachFile.start();
         threads.add(OPsOnEachFile);
     }
@@ -235,7 +235,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   public void ThreadingforEachFile(ArrayList<REQ> reqsOfAFile){
     ArrayList<Thread> threads = new ArrayList<Thread>; // for join and count number of R
     String PreviousOP = "";
-    for (int j = 0; j < reqs.size(); j++) {
+    for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
       if(PreviousOP.euqls("")){// there is no op before
         if(r.getOP().equals("R")){ // the req want to Read
