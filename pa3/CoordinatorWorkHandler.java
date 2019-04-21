@@ -262,7 +262,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           PreviousOP = "W";
 
           // adding record for SYNC
-          FilestoSYNC.add(r);
+          FilestoSYNC.put(r.getFilename(),r);
         }
       } else if (PreviousOP.euqls("W")){// there is a W op before
         for(int i = 0; i < threads.size(); i++){
@@ -302,7 +302,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           PreviousOP = "W";
 
           // adding record for SYNC
-          FilestoSYNC.add(r);
+          FilestoSYNC.put(r.getFilename(),r);
         }
       }
     }
