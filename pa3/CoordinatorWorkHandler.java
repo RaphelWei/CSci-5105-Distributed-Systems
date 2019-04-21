@@ -213,7 +213,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // !!!!!!!!!!!!!!!!!!!!!!! now the ConcurrentHashMap is only to sync between add request and (deep)copy requests
   public void ExecReqs(){
     ConcurrentHashMap<String, ArrayList<REQ>> reqsUpToNow = copy(reqs);
-    reqs = new ConcurrentHashMap<String, ArrayList<REQ>>();
+    reqs.clear();
     ArrayList<Thread> threads = new ArrayList<Thread>;
     Iterator it = reqsUpToNow.entrySet().iterator();
     while (it.hasNext()) {
