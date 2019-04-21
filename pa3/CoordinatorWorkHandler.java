@@ -27,13 +27,13 @@ import java.util.concurrent.*;
 public class CoordinatorWorkHandler implements CoordinatorWork.Iface
 {
   // sth to init!!!!!!!!!!!!!!!!!!!!!
-  String CoordinatorIP;
-  String CoordinatorPort;
+  private String CoordinatorIP;
+  private String CoordinatorPort;
   // Node: IP;Port
-  ArrayList<Node> ServerList = new ArrayList<Node>();
-  int NR;
-  int NW;
-  int N;
+  private ArrayList<Node> ServerList = new ArrayList<Node>();
+  private int NR;
+  private int NW;
+  private int N;
   // REQ:OP;Filename;Content;ClientIP;ClientPort
   // ArrayList<REQ> reqs = new ArrayList<REQ>();
   // ConcurrentLinkedQueue<REQ> reqs = new ConcurrentLinkedQueue<REQ>();
@@ -41,11 +41,11 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // note: for R, the number of char R means how many R op working.
   // ConcurrentHashMap<String, String> FileOP = new ConcurrentHashMap<String, String>();
 
-  ConcurrentHashMap<String, ArrayList<REQ>> reqs = new ConcurrentHashMap<String, ArrayList<REQ>>();
+  private ConcurrentHashMap<String, ArrayList<REQ>> reqs = new ConcurrentHashMap<String, ArrayList<REQ>>();
   // <filename, REQ>
-  ConcurrentHashMap<String, REQ> FilestoSYNC = new ConcurrentHashMap<String, REQ>();
+  private ConcurrentHashMap<String, REQ> FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   // ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
-  Boolean SYNC = false;
+  private Boolean SYNC = false;
 
   CoordinatorWorkHandler(String CoordinatorIP, String CoordinatorPort, int NR, int NW, int N) {
     this.CoordinatorIP = CoordinatorIP;
