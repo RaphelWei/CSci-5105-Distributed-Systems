@@ -364,16 +364,20 @@ System.out.println("QW size: "+ QW.size());
       return;
     }
 
-    int NewestVerNum;
+    int NewestVerNum = 0;
 
-    TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
-    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-    ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
-    //Try to connect
-    transport.open();
-    String ret = client.writeback(r);
-    NewestVerNum = client.getVersion(r.getFilename());
-    transport.close();
+    try{
+      TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      //Try to connect
+      transport.open();
+      String ret = client.writeback(r);
+      NewestVerNum = client.getVersion(r.getFilename());
+      transport.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
 
     for(int i=0; i<QW.size();i++){
       Node s_ = QW.get(i);
