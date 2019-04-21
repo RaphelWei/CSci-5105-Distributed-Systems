@@ -53,11 +53,7 @@ public class ClientReceiver {
     };
     new Thread(ThreadingServer).start();
 
-    if (handler.count == handler.numOfOps) {
-      int endTime = System.currentTimeMillis();
-      int time = endTime - startTime;
-      System.out.println("Total time is: " + time +" ms.");
-    }
+    
   }
 
   public static void StartServer(ServerWork.Processor processor, int port) {

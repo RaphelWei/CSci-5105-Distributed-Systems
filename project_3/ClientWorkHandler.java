@@ -27,7 +27,7 @@ public class ClientWorkHandler implements ClientWork.Iface {
 	private String ip;
 	private String port;
 	private int count = 0;
-	private int numOfOps = 0;
+	private int numOfOps = Integer.MAX_VALUE;
 	private int startTime = 0;
 	public ClientWorkHandler(String ip, String port) {
 		this.ip = ip;
@@ -36,9 +36,14 @@ public class ClientWorkHandler implements ClientWork.Iface {
 
 
   	@Override
-  	public Synchronized void printRet(String ret){
+  	public synchronized void printRet(String ret){
     	System.out.println(ret);
     	count++;
+    	if (count == numOfOps) {
+      		int endTime = System.currentTimeMillis();
+      		int time = endTime - startTime;
+      		System.out.println("Total time is: " + time +" ms.");
+    	}
   	}
 
   	@Override

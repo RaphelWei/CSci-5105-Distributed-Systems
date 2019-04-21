@@ -140,7 +140,7 @@ public class ClientSender {
     String request = "";
     REQ request = new REQ(op, fileName, content, clientIP, clientPort);
     try {
-      TTransoprt transport = new TSocket(ContactServerIP, Integer.parseInt(ContactServerPort));
+      TTransoprt transport = new TSocket(contactServerIP, Integer.parseInt(contactServerPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
       ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
           // Try to connect
@@ -152,7 +152,8 @@ public class ClientSender {
     }
   }
 
-
+  // This method would connect to the receiver, to help set the values of numOfOps and 
+  // startTime in receiver. Then when the receiver has received 
   public static void connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime) {
     try {
       TTransoprt transport = new TSocket(myIP, Integer.parseInt(receiverPort));
