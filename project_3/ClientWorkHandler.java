@@ -28,26 +28,32 @@ public class ClientWorkHandler implements ClientWork.Iface {
 	private String port;
 	private int count = 0;
 	private int numOfOps = Integer.MAX_VALUE;
-	private int startTime = 0;
+	private long startTime = 0;
 	public ClientWorkHandler(String ip, String port) {
 		this.ip = ip;
 		this.port = port;
 	}
 
+	public String getPort() {
+		return this.port;
+	}
 
+	public String getIP() {
+		return this.ip;
+	}
   	@Override
   	public synchronized void printRet(String ret){
     	System.out.println(ret);
     	count++;
     	if (count == numOfOps) {
-      		int endTime = System.currentTimeMillis();
-      		int time = endTime - startTime;
+      		long endTime = System.currentTimeMillis();
+      		long time = endTime - startTime;
       		System.out.println("Total time is: " + time +" ms.");
     	}
   	}
 
   	@Override
-  	public void setParams(int numOfOps, int startTime) {
+  	public void setParams(int numOfOps, long startTime) {
   		this.numOfOps = numOfOps;
   		this.startTime = startTime;
   	}

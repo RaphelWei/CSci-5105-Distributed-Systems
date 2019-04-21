@@ -18,5 +18,8 @@ service WorkWithNode {
 	Node find_predecessor(1: i32 id),
 	Node closet_preceding_finger(1: i32 id),
 	Node find_successor(1:i32 id),
-	void update_finger_table(1:Node s, 2:i32 i)
+	void update_finger_table(1:Node s, 2:i32 i),
+	map<string, string> getReord(),
+	void setRecord(1: map<string, string> record)
+
 }

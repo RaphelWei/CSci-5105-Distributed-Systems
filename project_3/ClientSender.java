@@ -34,8 +34,8 @@ public class ClientSender {
   private static String receiverPort;
   private static String myIP;
   private static int numOfOps;
-  private static int startTime;
-  
+  private static long startTime;
+
   // Format of the input args: [contactServerIP] [contactServerPort] [myPort] [receiverPort]
   // [contactServerIP] - The IP address of the node the client connect to
   // [contactServerPort] - The port number of the node
@@ -43,7 +43,7 @@ public class ClientSender {
   // [receiverPort] - The port number of the ClientReceiver
   public static void main(String [] args) {
 
-    if(args.size()<4){
+    if(args.length<4){
       System.out.println("Want 4 arguments!: contactServerIP contactServerPort myPort receiverPort");
       System.exit(-1);
     }
@@ -56,7 +56,11 @@ public class ClientSender {
     for (;;) {
       numOfOps = 0;
       startTime = 0;
-      myIP = InetAddress.getLocalHost().getHostAddress();
+      try{
+        myIP = InetAddress.getLocalHost().getHostAddress();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
 
 
       System.out.print("\n\n\n");
@@ -75,22 +79,22 @@ public class ClientSender {
         case "0":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./read-only.txt");
-          connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime)
+          connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "1":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./write-only.txt");
-          connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime)
+          connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "2":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./read-heavy.txt");
-          connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime)
+          connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "3":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./write-heavy.txt");
-          connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime)
+          connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         default:
           System.out.println("******************************** System ends ************************************************");
@@ -115,9 +119,9 @@ public class ClientSender {
         // str: [op] / [filename] / [content]
         String[] str = line.split("/");
         if(str[0].equals("W")){
-          connectServer(str[0], str[1], str[2], ReceiverIP, ReceiverPort);
+          connectServer(str[0], str[1], str[2], myIP, receiverPort);
         } else if (str[0].equals("R")) {
-          connectServer(str[0], str[1], null, ReceiverIP, ReceiverPort);
+          connectServer(str[0], str[1], null, myIP, receiverPort);
         }
       }
     } catch (Exception e) {
@@ -133,16 +137,15 @@ public class ClientSender {
   }
 
 
-  // First, this method would form a request, 
-  // then it will connect to a given server, this server would later 
+  // First, this method would form a request,
+  // then it will connect to a given server, this server would later
   // forward the request to the coordinator
   public static void connectServer(String op, String fileName, String content, String clientIP, String clientPort) {
-    String request = "";
     REQ request = new REQ(op, fileName, content, clientIP, clientPort);
     try {
-      TTransoprt transport = new TSocket(contactServerIP, Integer.parseInt(contactServerPort));
+      TTransport transport = new TSocket(contactServerIP, Integer.parseInt(contactServerPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      ServerWork.Client client = new ServerWork.Client(protocol);
           // Try to connect
       transport.open();
       client.request(request);
@@ -152,13 +155,13 @@ public class ClientSender {
     }
   }
 
-  // This method would connect to the receiver, to help set the values of numOfOps and 
-  // startTime in receiver. Then when the receiver has received 
-  public static void connectReceiver(String myIP, String receiverPort, int numOfOps, int startTime) {
+  // This method would connect to the receiver, to help set the values of numOfOps and
+  // startTime in receiver. Then when the receiver has received
+  public static void connectReceiver(String myIP, String receiverPort, int numOfOps, long startTime) {
     try {
-      TTransoprt transport = new TSocket(myIP, Integer.parseInt(receiverPort));
+      TTransport transport = new TSocket(myIP, Integer.parseInt(receiverPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      ClientWork.Client client = new ClientWork.Client(protocol);
       // Try to connect
       transport.open();
       client.setParams(numOfOps, startTime);

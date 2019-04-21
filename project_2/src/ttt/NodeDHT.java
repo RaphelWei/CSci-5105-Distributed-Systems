@@ -82,7 +82,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
 
         //Try to connect
         transport.open();
-        String initInfo = client.getNodeInfo(myIP.getHostAddress(),args[0]);
+        String initInfo = client.getNodeInfo("localhost",args[0]);
 
 
         if (initInfo.equals("NACK")) {
@@ -135,7 +135,7 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
         //     Socket newCon = serverSocket.accept();
         Runnable runnable2 = new NodeDHT(1);
         Thread t = new Thread(runnable2);
-        //     t.start();
+        t.start();
         // }
         //Start the Client for NodeDHT
     }
@@ -188,6 +188,12 @@ public class NodeDHT implements Runnable //extends UnicastRemoteObject implement
                 }
                 handler.setfingerTable(finger);
                 System.out.println("Done, all finger tablet set as me (only node in DHT)");
+                System.out.println("m= "+m);
+                for (int i = 1; i <= m; i++) {
+                  System.out.println("hello world");
+                  System.out.println("SuccNodeID = "+finger[i].Successor.getID()+" SuccNodeIP = "+finger[i].Successor.getIP());
+                    finger[i].setSuccessor(handler.getme());
+                }
             }
             else {
                 for (int i = 1; i <= m; i++) {

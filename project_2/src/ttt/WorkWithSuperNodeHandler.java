@@ -41,7 +41,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
     busy = 0;
     m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
     numDHT = (int)Math.pow(2,m);
-    Node[] nodeList = new Node[numDHT];
+    nodeList = new Node[numDHT];
     nodeIDList = new ArrayList<Integer>();
   }
   @Override
@@ -76,17 +76,18 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
                   nodeID = Math.abs(hashNum.intValue()) % numDHT;
                   System.out.println("ID Collision, new ID: " + nodeID);
               }
-
+              System.out.println("Generated ID: " + nodeID + " Collision Fixed");
 
               if (nodeList[nodeID] == null) {
                   nodeList[nodeID] = new Node(nodeID,nodeIP,nodePort);
                   nodeIDList.add(nodeID);
                   System.out.println("New node added ... ");
               }
+              System.out.println("Generated ID: " + nodeID + " new node added");
 
 
               Collections.sort(nodeIDList,Collections.reverseOrder());
-
+              System.out.println("Generated ID: " + nodeID + " sorting");
               int predID = nodeID;
               Iterator<Integer> iterator = nodeIDList.iterator();
               while (iterator.hasNext()) {
@@ -96,6 +97,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
                       break;
                   }
               }
+              System.out.println("Generated ID: " + predID + " pred");
               if (predID == nodeID)
                   predID = Collections.max(nodeIDList);
 
@@ -103,7 +105,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
 
           } catch (NoSuchAlgorithmException nsae){}
 
-
+            System.out.println(initInfo);
           return initInfo;
 
       } else {

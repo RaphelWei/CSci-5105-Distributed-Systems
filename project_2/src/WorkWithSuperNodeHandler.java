@@ -41,7 +41,7 @@ public class WorkWithSuperNodeHandler implements WorkWithSuperNode.Iface{
     busy = 0;
     m = (int) Math.ceil(Math.log(maxNumNodes) / Math.log(2));
     numDHT = (int)Math.pow(2,m);
-    Node[] nodeList = new Node[numDHT];
+    nodeList = new Node[numDHT];
     nodeIDList = new ArrayList<Integer>();
   }
   @Override

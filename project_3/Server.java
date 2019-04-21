@@ -1,50 +1,106 @@
 import java.io.*;
 
+import java.util.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.math.*;
+import javax.xml.bind.DatatypeConverter;
+
+import java.net.*;
+import java.net.UnknownHostException;
+
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportFactory;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TFramedTransport;
+import org.apache.thrift.transport.TSSLTransportFactory.TSSLTransportParameters;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TProtocol;
+
+
+import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TServer.Args;
+import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
+import org.apache.thrift.transport.TServerSocket;
+import org.apache.thrift.transport.TServerTransport;
+
+
 public class Server {
-	private static Node n = new Node();
-	// private static int id = s.getID();
-	// private static String ip = s.getIP();
-	// private static String port = s.getPort();
-	private static String pathOutputDir = "";
+  public static ServerWorkHandler handler;
+  public static ServerWork.Processor processor;
+  public static void main(String [] args) {
 
-	final private static int numOfFiles = 5;
+    if(args.length<3){
+      System.out.println("Want 3 arguments!: MyPort CoordinatorIP CoordinatorPort");
+      System.exit(-1);
+    }
 
-    // Format of the input args: [ServerIP] [ServerPort] [ClientPort]
-    // [CordIP] - The IP address of the Coordinator
-    // [CordPort] - The port number of the Coordinator
-    // [ServerPort] - The port number of the Server
-	public static void main(String[] args) {
+    String myIP = "";
+    try{
+      myIP = InetAddress.getLocalHost().getHostAddress();
+    } catch(Exception e){
+      e.printStackTrace();
+    }
+    System.out.println("I am at IP:   "+myIP);
+    System.out.println("I am at Port: "+args[0]);
 
-		InetAddress myIP = InetAddress.getLocalHost();
-        n.setIP(myIP.getHostAddress());
-        n.setPort(args[2]);
-        pathOutputDir = "./" + n.getIP() + ":_" + n.getPort();
-		File outputDir = new File(pathOutputDir);
-        if (!outputDir.exists()) {
-            outputDir.mkdir();
-        } else {
-            File[] files = outputDir.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                files[i].delete();
-            }
+    handler = new ServerWorkHandler(myIP, args[0],args[1], args[2]);
+    processor = new ServerWork.Processor(handler);
+
+
+    String directoryName = "./"+myIP+":_"+args[0];
+    File directory = new File(directoryName);
+    if (! directory.exists()){
+        directory.mkdir();
+    }
+
+
+    Runnable ThreadingServer = new Runnable() {
+        public void run() {
+            StartServer(processor, Integer.parseInt(handler.getPort()));
         }
+    };
+    new Thread(ThreadingServer).start();
 
-    	for (int i = 1; i <= numOfFiles; i++) {
-    		String fileName = "HelloWorld-" + "[" + i +"]" + ".txt";
-    		try {
-                out = new BufferedWriter(new OutputStreamWriter(
-                        new FileOutputStream(pathOutputDir + fileName, true)));
-                out.write(fileName + " " + 0 + "\n");
+    ToJoin();
+  }
 
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-    	}
-	}
+  public static void StartServer(ServerWork.Processor processor, int port) {
+    System.out.println(port);
+      try {
+          //Create Thrift server socket
+          TServerTransport serverTransport = new TServerSocket(port);
+          TTransportFactory factory = new TFramedTransport.Factory();
+
+          //Set server arguments
+          TThreadPoolServer.Args args = new TThreadPoolServer.Args(serverTransport);
+          args.processor(processor);  //Set handler
+          args.transportFactory(factory);  //Set FramedTransport (for performance)
+
+          //Run server as a single thread
+          TServer server = new TThreadPoolServer(args);
+          server.serve();
+
+      } catch (Exception e) {
+          e.printStackTrace();
+      }
+  }
+
+  public static void ToJoin(){
+    try{
+      TTransport  transport = new TSocket(handler.getCoordinatorIP(), Integer.parseInt(handler.getCoordinatorPort()));
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      CoordinatorWork.Client client = new CoordinatorWork.Client(protocol);
+      //Try to connect
+      transport.open();
+      client.join(new Node(handler.getIP(), handler.getPort()));
+      transport.close();
+
+    } catch(Exception e){
+      e.printStackTrace();
+    }
+  }
+
 }

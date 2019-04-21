@@ -12,7 +12,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.NavigableMap;
-import java.util.TreeMap;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -26,6 +26,7 @@ import org.apache.thrift.transport.TServerTransport;
 
 public class WorkWithNodeHandler implements WorkWithNode.Iface
 {
+  public static HashMap<String, String> record = new HashMap<>();
 private static Node me, pred;
 //static int m = 5;
 //static FingerTable[] finger = new FingerTable[m+1];
@@ -212,4 +213,48 @@ public void update_finger_table(Node s, int i)
               }
            //printAllFingers();
 }
+@Override
+public static String lookupBook_ByKey(int key, String title) {
+		Node p = find_successor(key);
+		HashMap<String, String> record1 = new HashMap<>();
+		try{
+          TTransport  transport = new TSocket(p.getIP(), Integer.parseInt(p.getPort()));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+          //Try to connect
+          transport.open();
+          record1 = client.getRecord();
+          if (record1.containsKey(title))
+          	return record1.get(title);
+          else
+          	return "No Such Book Found!";
+
+
+          transport.close();
+
+        } catch(TException e) {
+        	e.printStackTrace();
+        }
+	}
+
+
+@Override
+	public static void insertRecord_ByKey(int key, String title, String genre) {
+		Node p = find_successor(key);
+		HashMap<String, String> record1 = new HashMap<>();
+		try{
+          TTransport  transport = new TSocket(p.getIP(), Integer.parseInt(p.getPort()));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          WorkWithNode.Client client = new WorkWithNode.Client(protocol);
+
+          transport.open();
+          record1 = client.getRecord();
+          record1.put(title, genre);
+          client.setRecord(record1);
+          transport.close();
+
+        } catch(TException e) {
+        	e.printStackTrace();
+        }
+	}
 }

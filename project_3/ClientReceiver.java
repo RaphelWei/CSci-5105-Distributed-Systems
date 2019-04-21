@@ -33,12 +33,17 @@ public class ClientReceiver {
 
   public static void main(String [] args) {
 
-    if(args.size()<1){
+    if(args.length<1){
       System.out.println("Want 1 arguments!\nMyPort");
       System.exit(-1);
     }
 
-    String myIP = InetAddress.getLocalHost().getHostAddress();
+    String myIP="";
+    try{
+      myIP = InetAddress.getLocalHost().getHostAddress();
+    } catch(Exception e) {
+      e.printStackTrace();
+    }
     System.out.println("I am at IP:   "+myIP);
     System.out.println("I am at Port: "+args[0]);
 
@@ -48,15 +53,15 @@ public class ClientReceiver {
 
     Runnable ThreadingServer = new Runnable() {
         public void run() {
-            StartServer(processor, Integer.parseInt(handler.getIP()));
+            StartServer(processor, Integer.parseInt(handler.getPort()));
         }
     };
     new Thread(ThreadingServer).start();
 
-    
+
   }
 
-  public static void StartServer(ServerWork.Processor processor, int port) {
+  public static void StartServer(ClientWork.Processor processor, int port) {
     System.out.println(port);
       try {
           //Create Thrift server socket
