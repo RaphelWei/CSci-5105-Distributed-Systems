@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 public class ClientWorkHandler implements ClientWork.Iface {
 	private String ip;
 	private String port;
-	private int count = 0;
+	private Integer count = new Integer(0);
 	private int numOfOps = Integer.MAX_VALUE;
 	private long startTime = 0;
 	public ClientWorkHandler(String ip, String port) {

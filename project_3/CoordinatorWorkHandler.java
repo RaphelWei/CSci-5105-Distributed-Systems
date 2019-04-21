@@ -126,7 +126,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           break;
         }
       }
-      System.out.println("Quo Server "+i+": "+ServerList.get(index).getPort());
+      // System.out.println("Quo Server "+i+": "+ServerList.get(index).getPort());
       Quo.add(ServerList.get(index));
     }
     return Quo;
@@ -258,7 +258,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     ArrayList<Thread> threads = new ArrayList<Thread>();
     // Iterator it = reqsUpToNow.entrySet().iterator();
     for (Map.Entry<String, ArrayList<REQ>> pair: reqsUpToNow.entrySet()) {
-      // System.out.println("ExecReqs: the file to take care: "+pair.getKey());
+      System.out.println("ExecReqs: the file to take care:      "+pair.getKey());
+      System.out.println("ExecReqs: the # of reqs to take care: "+pair.getValue().size());
         // Map.Entry pair = (Map.Entry)it.next();
         Runnable ReadingOPs = new Runnable() {
             public void run() {
@@ -279,50 +280,54 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   }
 
   public void ThreadingforEachFile(ArrayList<REQ> reqsOfAFile){
-    ArrayList<Thread> threads = new ArrayList<Thread>(); // for join and count number of R
-    String PreviousOP = "";
+    System.out.println("reqsOfAFile.size(): "+reqsOfAFile.size());
+    // ArrayList<Thread> threads = new ArrayList<Thread>(); // for join and count number of R
+    // String PreviousOP = "";
     for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
       // System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
       // System.out.println("ThreadingforEachFile: the file op to take care: "+r.getOP());
-      if(PreviousOP.equals("")){// there is no op before
-        if(r.getOP().equals("R")){ // the req want to Read
-          Runnable Reading = new Runnable() {
-              public void run() {
-                  ExecR(r);
-              }
-          };
-          Thread ROP = new Thread(Reading);
-          ROP.start();
-          threads.add(ROP);
-          PreviousOP = "R";
-
-        } else if(r.getOP().equals("W")){ // the req want to Write
-          // System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
-          Runnable Writing = new Runnable() {
-              public void run() {
-                  ExecW(r);
-              }
-          };
-          Thread WOP = new Thread(Writing);
-          WOP.start();
-          threads.add(WOP);
-          PreviousOP = "W";
-
-          // adding record for SYNC
-          FilestoSYNC.put(r.getFilename(),r);
-        }
-      } else if (PreviousOP.equals("W")){// there is a W op before
-        for(int i = 0; i < threads.size(); i++){
-          try{
-            threads.get(i).join();
-          } catch(Exception e) {
-            e.printStackTrace();
-          }
-        }
-        threads = new ArrayList<Thread>();
-
-      } else if (PreviousOP.equals("R")){// there is a R op running on this file
+      // if(PreviousOP.equals("")){// there is no op before
+      //   if(r.getOP().equals("R")){ // the req want to Read
+      //     Runnable Reading = new Runnable() {
+      //         public void run() {
+      //             ExecR(r);
+      //         }
+      //     };
+      //     Thread ROP = new Thread(Reading);
+      //     ROP.start();
+      //     ROP.join();
+      //     // threads.add(ROP);
+      //     PreviousOP = "R";
+      //
+      //   } else if(r.getOP().equals("W")){ // the req want to Write
+      //     // System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
+      //     Runnable Writing = new Runnable() {
+      //         public void run() {
+      //             ExecW(r);
+      //         }
+      //     };
+      //     Thread WOP = new Thread(Writing);
+      //     WOP.start();
+      //     WOP.join();
+      //     // threads.add(WOP);
+      //     PreviousOP = "W";
+      //
+      //     // adding record for SYNC
+      //     FilestoSYNC.put(r.getFilename(),r);
+      //   }
+      // } else if (PreviousOP.equals("W")){// there is a W op before
+      //   System.out.println("there is a W op before; threads.size(): "+threads.size());
+      //   // for(int i = 0; i < threads.size(); i++){
+      //   //   try{
+      //   //     threads.get(i).join();
+      //   //   } catch(Exception e) {
+      //   //     e.printStackTrace();
+      //   //   }
+      //   // }
+      //   // threads = new ArrayList<Thread>();
+      //
+      // } else if (PreviousOP.equals("R")){// there is a R op running on this file
         if(r.getOP().equals("R")){ // R after R; go for it
           Runnable Reading = new Runnable() {
               public void run() {
@@ -331,20 +336,22 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           };
           Thread ROP = new Thread(Reading);
           ROP.start();
-          threads.add(ROP);
-          PreviousOP = "R";
+          try{ROP.join();}catch(Exception e) {}
+
+          // threads.add(ROP);
+          // PreviousOP = "R";
 
         } else if(r.getOP().equals("W")){// W after R; wait for all R
 
           // join all R before
-          for(int i = 0; i < threads.size(); i++){
-            try{
-              threads.get(i).join();
-            } catch(Exception e) {
-              e.printStackTrace();
-            }
-          }
-          threads = new ArrayList<Thread>();
+          // for(int i = 0; i < threads.size(); i++){
+          //   try{
+          //     threads.get(i).join();
+          //   } catch(Exception e) {
+          //     e.printStackTrace();
+          //   }
+          // }
+          // threads = new ArrayList<Thread>();
 
           // do the W
           Runnable Writing = new Runnable() {
@@ -354,27 +361,29 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           };
           Thread WOP = new Thread(Writing);
           WOP.start();
-          threads.add(WOP);
-          PreviousOP = "W";
+          try{WOP.join();}catch(Exception e) {}
+          // threads.add(WOP);
+          // PreviousOP = "W";
 
           // adding record for SYNC
           FilestoSYNC.put(r.getFilename(),r);
         }
-      }
+      // }
     }
 
     // take care the last several R or single W
-    for(int i = 0; i < threads.size(); i++){
-      try{
-        threads.get(i).join();
-      } catch(Exception e) {
-        e.printStackTrace();
-      }
-    }
+    // System.out.println("the last threads.size():        "+threads.size());
+    // for(int i = 0; i < threads.size(); i++){
+    //   try{
+    //     threads.get(i).join();
+    //   } catch(Exception e) {
+    //     e.printStackTrace();
+    //   }
+    // }
   }
 
   public void NACKClient(REQ r, String s){
-System.out.println("NACKClient");
+// System.out.println("NACKClient");
     try{
       TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
@@ -390,10 +399,10 @@ System.out.println("NACKClient");
 
   // for threading.
   public void ExecR(REQ r){
-System.out.println("ExecR");
+// System.out.println("ExecR");
     Node s = find_newest(getQuo(NR),r.getFilename());
     if(s==null){ // cannot find the file or the file is removed
-      System.out.println("ExecR: This file does not exist!");
+      // System.out.println("ExecR: This file does not exist!");
       String str = ", does not exist.";
       NACKClient(r, str);
       return;
@@ -414,9 +423,9 @@ System.out.println("ExecR");
 
   public void ExecW(REQ r){
     int NewestVerNum = 0;
-System.out.println("ExecW");
+// System.out.println("ExecW");
     ArrayList<Node> QW = getQuo(NW);
-System.out.println("QW size: "+ QW.size());
+// System.out.println("QW size: "+ QW.size());
     Node s = find_newest(QW, r.getFilename());
     if(s==null){
       System.out.println("ExecW: This file does not exist!");
