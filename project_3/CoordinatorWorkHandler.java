@@ -45,12 +45,12 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // <filename, REQ>
   private ConcurrentHashMap<String, REQ> FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   // ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
-  private Boolean SYNC = false;
+  private boolean SYNC = false;
 
-  public Boolean getSYNC() {
+  public boolean getSYNC() {
     return this.SYNC;
   }
-  public void setSYNC(Boolean SYNC) {
+  public void setSYNC(boolean SYNC) {
     this.SYNC=SYNC;
   }
 
@@ -96,30 +96,40 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   @Override
   public synchronized void join(Node S){
     ServerList.add(S);
+    for(int i=0; i<ServerList.size();i++){
+      System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
+    }
   }
 
   // size is either NR or NW
   public ArrayList<Node> getQuo(int size){
     // Node[] Quo = new Node[size];
+    System.out.println("getQuo");
     ArrayList<Node> Quo = new ArrayList<Node>();
-    Boolean[] inds = new Boolean[ServerList.size()];
+    boolean[] inds = new boolean[ServerList.size()];
+    // System.out.println("ServerList.size():"+ServerList.size());
     for(int i=0;i<size;i++){
       int index=0;
       while(true) {
-        index = getRandomServerID();
+        index = getRandomServerID(ServerList);
+        System.out.println("Quo Server index:"+index);
+        System.out.println("Quo Server index:"+index);
+        System.out.println(inds[index]);
+        System.out.println("ServerList.size():"+ServerList.size());
         if(!inds[index]){
           inds[index]=true;
           break;
         }
       }
+      System.out.println("Quo Server "+i+": "+ServerList.get(index).getPort());
       Quo.add(ServerList.get(index));
     }
     return Quo;
   }
 
-  public int getRandomServerID() {
+  public int getRandomServerID(ArrayList<Node> ServerCheckList) {
     Random rand = new Random();
-    return rand.nextInt(ServerList.size());
+    return rand.nextInt(ServerCheckList.size());
   }
 
   // ServerCheckList: formed by getQuo; with size NR or NW
@@ -243,6 +253,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     ArrayList<Thread> threads = new ArrayList<Thread>();
     // Iterator it = reqsUpToNow.entrySet().iterator();
     for (Map.Entry<String, ArrayList<REQ>> pair: reqsUpToNow.entrySet()) {
+      System.out.println("ExecReqs: the file to take care: "+pair.getKey());
         // Map.Entry pair = (Map.Entry)it.next();
         Runnable ReadingOPs = new Runnable() {
             public void run() {
@@ -267,6 +278,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     String PreviousOP = "";
     for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
+      System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
+      System.out.println("ThreadingforEachFile: the file op to take care: "+r.getOP());
       if(PreviousOP.equals("")){// there is no op before
         if(r.getOP().equals("R")){ // the req want to Read
           Runnable Reading = new Runnable() {
@@ -280,7 +293,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           PreviousOP = "R";
 
         } else if(r.getOP().equals("W")){ // the req want to Write
-
+          System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
           Runnable Writing = new Runnable() {
               public void run() {
                   ExecW(r);
@@ -395,32 +408,44 @@ System.out.println("ExecR");
   }
 
   public void ExecW(REQ r){
+    int NewestVerNum = 0;
 System.out.println("ExecW");
     ArrayList<Node> QW = getQuo(NW);
 System.out.println("QW size: "+ QW.size());
     Node s = find_newest(QW, r.getFilename());
     if(s==null){
       System.out.println("ExecW: This file does not exist!");
-      String str = ", does not exist.";
-      NACKClient(r, str);
-      return;
+      // String str = ", does not exist.";
+      // NACKClient(r, str);
+      // return;
+      s = QW.get(getRandomServerID(QW));
+      try{
+        TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        ServerWork.Client client = new ServerWork.Client(protocol);
+        //Try to connect
+        transport.open();
+        String ret = client.overWriteFile(r,NewestVerNum);
+        ret = client.writeback(r);
+        transport.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    } else {
+        try{
+          TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          ServerWork.Client client = new ServerWork.Client(protocol);
+          //Try to connect
+          transport.open();
+          client.writeFile(r);
+          String ret = client.writeback(r);
+          NewestVerNum = client.getVersion(r.getFilename());
+          transport.close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
     }
-
-    int NewestVerNum = 0;
-
-    try{
-      TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
-      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWork.Client client = new ServerWork.Client(protocol);
-      //Try to connect
-      transport.open();
-      String ret = client.writeback(r);
-      NewestVerNum = client.getVersion(r.getFilename());
-      transport.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
     for(int i=0; i<QW.size();i++){
       Node s_ = QW.get(i);
       if(!((s_.getIP()+s_.getPort()).equals(s.getIP()+s.getPort()))){

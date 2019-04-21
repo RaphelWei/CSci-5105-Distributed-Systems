@@ -13,9 +13,10 @@ struct REQ {
 }
 
 service ServerWork {
-  void request(1: REQ r),
+  void ForRequest(1: REQ r),
   i32 getVersion(1: string filename),
   string readback(1: REQ r),
   string writeback(1: REQ r),
-  string overWriteFile(1: REQ r, 2: i32 NewestVerNum)
+  string overWriteFile(1: REQ r, 2: i32 NewestVerNum),
+  void writeFile(1: REQ r)
 }

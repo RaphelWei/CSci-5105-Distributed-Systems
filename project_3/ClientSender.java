@@ -89,6 +89,7 @@ public class ClientSender {
         case "2":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./read-heavy.txt");
+          System.out.println("numOfOps: " + numOfOps);
           connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "3":
@@ -148,7 +149,7 @@ public class ClientSender {
       ServerWork.Client client = new ServerWork.Client(protocol);
           // Try to connect
       transport.open();
-      client.request(request);
+      client.ForRequest(request);
       transport.close();
     } catch (TException e) {
       e.printStackTrace();

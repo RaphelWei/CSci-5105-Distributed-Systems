@@ -45,10 +45,12 @@ public class ClientWorkHandler implements ClientWork.Iface {
   	public synchronized void printRet(String ret){
     	System.out.println(ret);
     	count++;
+			System.out.println("count: " + count);
     	if (count == numOfOps) {
       		long endTime = System.currentTimeMillis();
       		long time = endTime - startTime;
       		System.out.println("Total time is: " + time +" ms.");
+					count=0;
     	}
   	}
 

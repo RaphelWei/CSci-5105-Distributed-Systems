@@ -58,15 +58,18 @@ public class ServerWorkHandler implements ServerWork.Iface
   }
 
   @Override
-  public void request(REQ r)
+  public void ForRequest(REQ r)
   {
+    System.out.println("ForRequest");
     try{
       TTransport  transport = new TSocket(CoordinatorIP, Integer.parseInt(CoordinatorPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
       CoordinatorWork.Client client = new CoordinatorWork.Client(protocol);
       //Try to connect
       transport.open();
+      System.out.println("ask coordinator, forwardReq");
       client.forwardReq(r);
+      System.out.println("back from forwardReq");
       transport.close();
 
     } catch(TException e) {
@@ -102,7 +105,7 @@ public class ServerWorkHandler implements ServerWork.Iface
   }
   @Override
   public String writeback(REQ r){
-    writeFile(r);
+    // writeFile(r);
 
     try{
       TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
@@ -136,6 +139,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     //     e.printStackTrace();
     //     System.exit(-1);
     // }
+    System.out.println(getVersion(r.getFilename())+1);
     overWriteFile(r, getVersion(r.getFilename())+1);
 
   }
@@ -149,6 +153,7 @@ public class ServerWorkHandler implements ServerWork.Iface
 
     File file = new File(directoryName + "/" + r.getFilename());
     try{
+        file.createNewFile();
         FileWriter fw = new FileWriter(file.getAbsoluteFile());
         BufferedWriter bw = new BufferedWriter(fw);
         bw.write(r.getContent()+"/"+NewestVerNum);
