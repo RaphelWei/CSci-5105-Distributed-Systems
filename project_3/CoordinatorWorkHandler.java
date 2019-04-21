@@ -91,13 +91,18 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       REQList.add(r);
       reqs.put(r.getFilename(), REQList);
     }
+    for (Map.Entry<String, ArrayList<REQ>> pair: reqs.entrySet()) {
+      System.out.println("reqs file:       "+pair.getKey());
+      System.out.println("reqs size of op: "+pair.getValue().size());
+    }
+
   }
 
   @Override
   public synchronized void join(Node S){
     ServerList.add(S);
     for(int i=0; i<ServerList.size();i++){
-      System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
+      // System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
     }
   }
 
@@ -112,10 +117,10 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       int index=0;
       while(true) {
         index = getRandomServerID(ServerList);
-        System.out.println("Quo Server index:"+index);
-        System.out.println("Quo Server index:"+index);
-        System.out.println(inds[index]);
-        System.out.println("ServerList.size():"+ServerList.size());
+        // System.out.println("Quo Server index:"+index);
+        // System.out.println("Quo Server index:"+index);
+        // System.out.println(inds[index]);
+        // System.out.println("ServerList.size():"+ServerList.size());
         if(!inds[index]){
           inds[index]=true;
           break;
@@ -182,7 +187,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       // Map.Entry pair = (Map.Entry)it.next();
       Node newest = find_newest(ServerList, pair.getKey()); // newest == null
       if(newest==null){
-        System.out.println("SYNC: This file does not exist!" + pair.getKey());
+        // System.out.println("SYNC: This file does not exist!" + pair.getKey());
         String str = ", does not exist.";
         NACKClient(pair.getValue(), str);
         continue; // directly continue; FilestoSYNC always got re-init at the end of this function.
@@ -195,8 +200,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         transport.open();
         NewestVerNum = client.getVersion(pair.getKey());
         if(NewestVerNum==-1){ // the written file was removed !!!!!!!!!!!!!!!!!
-          System.out.println("SYNC: not right! I cannot find a file I wrote before");
-          System.out.println("SYNC: going to rewrite the missing file with version 0");
+          // System.out.println("SYNC: not right! I cannot find a file I wrote before");
+          // System.out.println("SYNC: going to rewrite the missing file with version 0");
           NewestVerNum = 0;
         }
         SyncOlder(ServerList,pair.getKey(),pair.getValue(),NewestVerNum);
@@ -253,7 +258,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     ArrayList<Thread> threads = new ArrayList<Thread>();
     // Iterator it = reqsUpToNow.entrySet().iterator();
     for (Map.Entry<String, ArrayList<REQ>> pair: reqsUpToNow.entrySet()) {
-      System.out.println("ExecReqs: the file to take care: "+pair.getKey());
+      // System.out.println("ExecReqs: the file to take care: "+pair.getKey());
         // Map.Entry pair = (Map.Entry)it.next();
         Runnable ReadingOPs = new Runnable() {
             public void run() {
@@ -278,8 +283,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     String PreviousOP = "";
     for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
-      System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
-      System.out.println("ThreadingforEachFile: the file op to take care: "+r.getOP());
+      // System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
+      // System.out.println("ThreadingforEachFile: the file op to take care: "+r.getOP());
       if(PreviousOP.equals("")){// there is no op before
         if(r.getOP().equals("R")){ // the req want to Read
           Runnable Reading = new Runnable() {
@@ -293,7 +298,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           PreviousOP = "R";
 
         } else if(r.getOP().equals("W")){ // the req want to Write
-          System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
+          // System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
           Runnable Writing = new Runnable() {
               public void run() {
                   ExecW(r);

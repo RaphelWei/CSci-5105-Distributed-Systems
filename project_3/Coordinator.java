@@ -139,7 +139,7 @@ public class Coordinator {
   public static void ProcessingRequests(){
     while(true){
       try {
-        Thread.sleep(500);
+        Thread.sleep(50);
       } catch (Exception e) {
         e.printStackTrace();
       }

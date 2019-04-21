@@ -79,11 +79,13 @@ public class ClientSender {
         case "0":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./read-only.txt");
+          System.out.println("numOfOps: " + numOfOps);
           connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "1":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./write-only.txt");
+          System.out.println("numOfOps: " + numOfOps);
           connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         case "2":
@@ -95,6 +97,7 @@ public class ClientSender {
         case "3":
           startTime = System.currentTimeMillis();
           numOfOps = handleRequest("./write-heavy.txt");
+          System.out.println("numOfOps: " + numOfOps);
           connectReceiver(myIP, receiverPort, numOfOps, startTime);
           break;
         default:
