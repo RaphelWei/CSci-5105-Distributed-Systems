@@ -40,9 +40,9 @@ public class Coordinator {
       System.out.println("Want 5 arguments!: CoordinatorPort NR NW N ServerPort");
       System.exit(-1);
     }
-    int NR = Integer.toString(args[2]);
-    int NW = Integer.toString(args[3]);
-    int N = Integer.toString(args[4]);
+    int NR = Integer.parseInt(args[1]);
+    int NW = Integer.parseInt(args[2]);
+    int N = Integer.parseInt(args[3]);
 
     if(NR + NW <= N || NW <= N/2 ){
       System.out.println("the value of NR, NW, N do not meet requirement");
@@ -55,7 +55,7 @@ public class Coordinator {
 
 
     // coordinator init
-    CoordinatorHandler = new CoordinatorWorkHandler(myIP,args[0],Integer.toString(args[1]), Integer.toString(args[2]), Integer.toString(args[3]));
+    CoordinatorHandler = new CoordinatorWorkHandler(myIP,args[0],Integer.parseInt(args[1]), Integer.parseInt(args[2]), Integer.parseInt(args[3]));
     CoordinatorProcessor = new CoordinatorWork.Processor(CoordinatorHandler);
 
     Runnable PeriodSYNC = new Runnable() {

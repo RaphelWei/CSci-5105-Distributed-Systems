@@ -65,7 +65,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     String[] AList = ALine.split("/");
     reader.close();
 
-   return Integer.toString(AList[1]);
+   return Integer.parseInt(AList[1]);
   }
 
   @Override
