@@ -23,19 +23,43 @@ import org.apache.thrift.transport.TServerTransport;
 
 import java.util.concurrent.*;
 
-public class ClientWorkHandler implements ClientWork.Iface
-{
-  private String IP;
-  private String Port;
+public class ClientWorkHandler implements ClientWork.Iface {
+	private String ip;
+	private String port;
+	private int count = 0;
+	private int numOfOps = Integer.MAX_VALUE;
+	private long startTime = 0;
+	public ClientWorkHandler(String ip, String port) {
+		this.ip = ip;
+		this.port = port;
+	}
 
-  ClientWorkHandler(String IP, String Port){
-    this.IP=IP;
-    this.Port=Port;
-  }
+	public String getPort() {
+		return this.port;
+	}
 
-  @Override
-  public void printRet(String ret){
-    System.out.println(ret);
-  }
+	public String getIP() {
+		return this.ip;
+	}
+  	@Override
+  	public void printRet(String ret){
+    	System.out.println(ret);
+			synchronized(count){count++;}
+			System.out.println("count: " + count);
+    	if (count == numOfOps) {
+      		long endTime = System.currentTimeMillis();
+      		long time = endTime - startTime;
+      		System.out.println("Total time is: " + time +" ms.");
+					count=0;
+    	}
+  	}
+
+  	@Override
+  	public void setParams(int numOfOps, long startTime) {
+  		this.numOfOps = numOfOps;
+  		this.startTime = startTime;
+  	}
+
+
 
 }

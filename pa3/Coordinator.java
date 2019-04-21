@@ -36,7 +36,7 @@ public class Coordinator {
 
   public static void main(String [] args) {
 
-    if(args.size()<5){
+    if(args.length<5){
       System.out.println("Want 5 arguments!: CoordinatorPort NR NW N ServerPort");
       System.exit(-1);
     }
@@ -48,10 +48,15 @@ public class Coordinator {
       System.out.println("the value of NR, NW, N do not meet requirement");
       System.exit(-1);
     }
-
-    String myIP = InetAddress.getLocalHost().getHostAddress();
-    System.out.println("I am at IP:   "+myIP);
-    System.out.println("I am at Port: "+args[5]);
+    String myIP = "";
+    try{
+      myIP = InetAddress.getLocalHost().getHostAddress();
+      System.out.println("I am at IP:   "+myIP);
+      System.out.println("I am at CoordinatorPort: "+args[0]);
+      System.out.println("I am at ServerPort: "+args[4]);
+    } catch(Exception e) {
+      e.printStackTrace();
+    }
 
 
     // coordinator init
@@ -70,7 +75,7 @@ public class Coordinator {
     };
     Runnable ThreadingCoordinator = new Runnable() {
         public void run() {
-            StartCoordinator(CoordinatorProcessor, CoordinatorHandler.getPort());
+            StartCoordinator(CoordinatorProcessor, Integer.parseInt(CoordinatorHandler.getCoordinatorPort()));
         }
     };
     new Thread(PeriodSYNC).start();
@@ -83,7 +88,7 @@ public class Coordinator {
     // server init
 
     SeverHandler = new ServerWorkHandler(myIP, args[4], myIP, args[0]);
-    SeverProcessor = new ServerWork.Processor(handler);
+    SeverProcessor = new ServerWork.Processor(SeverHandler);
 
     Runnable ThreadingServer = new Runnable() {
         public void run() {
@@ -93,13 +98,13 @@ public class Coordinator {
     new Thread(ThreadingServer).start();
 
     // ToJoin();
-    CoordinatorHandler.join(new Node(SeverHandler.getIP(), SeverHandler.getPort();
+    CoordinatorHandler.join(new Node(SeverHandler.getIP(), SeverHandler.getPort()));
 
 
 
   }
 
-  public static void StartCoordinator(CoordinatorHandler.Processor processor, int port) {
+  public static void StartCoordinator(CoordinatorWork.Processor processor, int port) {
     System.out.println(port);
       try {
           //Create Thrift server socket
@@ -120,7 +125,7 @@ public class Coordinator {
       }
   }
 
-  public void ToSYNC(){
+  public static void ToSYNC(){
     while(true){
       try {
         Thread.sleep(2000);
@@ -131,15 +136,15 @@ public class Coordinator {
     }
   }
 
-  public void ProcessingRequests(){
+  public static void ProcessingRequests(){
     while(true){
       try {
-        Thread.sleep(500);
+        Thread.sleep(50);
       } catch (Exception e) {
         e.printStackTrace();
       }
       if(CoordinatorHandler.getSYNC()){
-        CoordinatorHandler.Sync();
+        CoordinatorHandler.SYNC();
       } else {
         CoordinatorHandler.ExecReqs();
       }

@@ -32,12 +32,17 @@ public class Server {
   public static ServerWork.Processor processor;
   public static void main(String [] args) {
 
-    if(args.size()<3){
+    if(args.length<3){
       System.out.println("Want 3 arguments!: MyPort CoordinatorIP CoordinatorPort");
       System.exit(-1);
     }
 
-    String myIP = InetAddress.getLocalHost().getHostAddress();
+    String myIP = "";
+    try{
+      myIP = InetAddress.getLocalHost().getHostAddress();
+    } catch(Exception e){
+      e.printStackTrace();
+    }
     System.out.println("I am at IP:   "+myIP);
     System.out.println("I am at Port: "+args[0]);
 
@@ -54,7 +59,7 @@ public class Server {
 
     Runnable ThreadingServer = new Runnable() {
         public void run() {
-            StartServer(processor, Integer.parseInt(handler.getIP()));
+            StartServer(processor, Integer.parseInt(handler.getPort()));
         }
     };
     new Thread(ThreadingServer).start();
@@ -87,7 +92,7 @@ public class Server {
     try{
       TTransport  transport = new TSocket(handler.getCoordinatorIP(), Integer.parseInt(handler.getCoordinatorPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      CoordinatorWork.Client client = new CoordinatorWork.Client(protocol);
       //Try to connect
       transport.open();
       client.join(new Node(handler.getIP(), handler.getPort()));

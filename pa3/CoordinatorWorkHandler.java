@@ -45,7 +45,32 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   // <filename, REQ>
   private ConcurrentHashMap<String, REQ> FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   // ArrayList<REQ> FilestoSYNC = new ArrayList<REQ>();
-  private Boolean SYNC = false;
+  private boolean SYNC = false;
+
+  public boolean getSYNC() {
+    return this.SYNC;
+  }
+  public void setSYNC(boolean SYNC) {
+    this.SYNC=SYNC;
+  }
+
+  public int getNR() {
+    return this.NR;
+  }
+  public int getNW() {
+    return this.NW;
+  }
+  public int getN() {
+    return this.N;
+  }
+
+  public String getCoordinatorIP() {
+    return this.CoordinatorIP;
+  }
+
+  public String getCoordinatorPort() {
+    return this.CoordinatorPort;
+  }
 
   CoordinatorWorkHandler(String CoordinatorIP, String CoordinatorPort, int NR, int NW, int N) {
     this.CoordinatorIP = CoordinatorIP;
@@ -58,39 +83,58 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   @Override
   public synchronized void forwardReq(REQ r){
     if(reqs.get(r.getFilename())==null){
-      reqs.put(r.getFilename(), new ArrayList<REQ>(r));
+      ArrayList<REQ> REQList = new ArrayList<REQ>();
+      REQList.add(r);
+      reqs.put(r.getFilename(), REQList);
     } else {
-      reqs.put(r.getFilename(), reqs.get(r.getFilename()).add(r));
+      ArrayList<REQ> REQList = reqs.get(r.getFilename());
+      REQList.add(r);
+      reqs.put(r.getFilename(), REQList);
     }
+    for (Map.Entry<String, ArrayList<REQ>> pair: reqs.entrySet()) {
+      System.out.println("reqs file:       "+pair.getKey());
+      System.out.println("reqs size of op: "+pair.getValue().size());
+    }
+
   }
 
   @Override
   public synchronized void join(Node S){
     ServerList.add(S);
+    for(int i=0; i<ServerList.size();i++){
+      // System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
+    }
   }
 
   // size is either NR or NW
   public ArrayList<Node> getQuo(int size){
     // Node[] Quo = new Node[size];
+    System.out.println("getQuo");
     ArrayList<Node> Quo = new ArrayList<Node>();
-    Boolean[] inds = new Boolean[ServerList.size()];
+    boolean[] inds = new boolean[ServerList.size()];
+    // System.out.println("ServerList.size():"+ServerList.size());
     for(int i=0;i<size;i++){
       int index=0;
       while(true) {
-        index = getRandomServerID();
+        index = getRandomServerID(ServerList);
+        // System.out.println("Quo Server index:"+index);
+        // System.out.println("Quo Server index:"+index);
+        // System.out.println(inds[index]);
+        // System.out.println("ServerList.size():"+ServerList.size());
         if(!inds[index]){
           inds[index]=true;
           break;
         }
       }
+      System.out.println("Quo Server "+i+": "+ServerList.get(index).getPort());
       Quo.add(ServerList.get(index));
     }
     return Quo;
   }
 
-  public int getRandomServerID() {
+  public int getRandomServerID(ArrayList<Node> ServerCheckList) {
     Random rand = new Random();
-    return rand.nextInt(ServerList.size());
+    return rand.nextInt(ServerCheckList.size());
   }
 
   // ServerCheckList: formed by getQuo; with size NR or NW
@@ -101,7 +145,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       try{
         TTransport  transport = new TSocket(ServerCheckList.get(i).getIP(), Integer.parseInt(ServerCheckList.get(i).getPort()));
         TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-        ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+        ServerWork.Client client = new ServerWork.Client(protocol);
         //Try to connect
         transport.open();
         int NextVerNum = client.getVersion(Filename);
@@ -122,7 +166,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       try{
         TTransport  transport = new TSocket(ServerCheckList.get(i).getIP(), Integer.parseInt(ServerCheckList.get(i).getPort()));
         TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-        ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+        ServerWork.Client client = new ServerWork.Client(protocol);
         //Try to connect
         transport.open();
         int NextVerNum = client.getVersion(Filename);
@@ -139,11 +183,11 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   public void SYNC() {
     Iterator it = FilestoSYNC.entrySet().iterator();
     int NewestVerNum;
-    while(it.hasNext()){
-      Map.Entry pair = (Map.Entry)it.next();
+    for(Map.Entry<String, REQ> pair: FilestoSYNC.entrySet()){
+      // Map.Entry pair = (Map.Entry)it.next();
       Node newest = find_newest(ServerList, pair.getKey()); // newest == null
-      if(newest==null{
-        System.out.println("SYNC: This file does not exist!" + pair.getKey());
+      if(newest==null){
+        // System.out.println("SYNC: This file does not exist!" + pair.getKey());
         String str = ", does not exist.";
         NACKClient(pair.getValue(), str);
         continue; // directly continue; FilestoSYNC always got re-init at the end of this function.
@@ -151,13 +195,13 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       try{
         TTransport  transport = new TSocket(newest.getIP(), Integer.parseInt(newest.getPort()));
         TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-        ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+        ServerWork.Client client = new ServerWork.Client(protocol);
         //Try to connect
         transport.open();
         NewestVerNum = client.getVersion(pair.getKey());
         if(NewestVerNum==-1){ // the written file was removed !!!!!!!!!!!!!!!!!
-          System.out.println("SYNC: not right! I cannot find a file I wrote before");
-          System.out.println("SYNC: going to rewrite the missing file with version 0");
+          // System.out.println("SYNC: not right! I cannot find a file I wrote before");
+          // System.out.println("SYNC: going to rewrite the missing file with version 0");
           NewestVerNum = 0;
         }
         SyncOlder(ServerList,pair.getKey(),pair.getValue(),NewestVerNum);
@@ -173,9 +217,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     //   Node newest = find_newest(ServerList, FilestoSYNC.get(i).getFilename()); // newest == null
     //   if(newest==null{
     //     System.out.println("SYNC: This file does not exist!" + FilestoSYNC.get(i).getFilename());
-    //     String str = ", does not exist.";
-    //     NACKClient(FilestoSYNC.get(i), str);
-    //     continue; // directly continue; FilestoSYNC always got re-init at the end of this function.
+    //     String str = "irectly continue; FilestoSYNC always got re-init at the end of this function.
     //   }
     //   try{
     //     TTransport  transport = new TSocket(newest.getIP(), Integer.parseInt(newest.getPort()));
@@ -191,12 +233,11 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     //   }
 
 
-    }
     SYNC=false;
     FilestoSYNC = new ConcurrentHashMap<String, REQ>();
   }
 
-  public static ConcurrentHashMap<String, , ArrayList<REQ>> copy(
+  public static ConcurrentHashMap<String, ArrayList<REQ>> copy(
     ConcurrentHashMap<String, ArrayList<REQ>> original)
 {
     ConcurrentHashMap<String, ArrayList<REQ>> copy = new ConcurrentHashMap<String, ArrayList<REQ>>();
@@ -214,10 +255,11 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   public void ExecReqs(){
     ConcurrentHashMap<String, ArrayList<REQ>> reqsUpToNow = copy(reqs);
     reqs.clear();
-    ArrayList<Thread> threads = new ArrayList<Thread>;
-    Iterator it = reqsUpToNow.entrySet().iterator();
-    while (it.hasNext()) {
-        Map.Entry pair = (Map.Entry)it.next();
+    ArrayList<Thread> threads = new ArrayList<Thread>();
+    // Iterator it = reqsUpToNow.entrySet().iterator();
+    for (Map.Entry<String, ArrayList<REQ>> pair: reqsUpToNow.entrySet()) {
+      // System.out.println("ExecReqs: the file to take care: "+pair.getKey());
+        // Map.Entry pair = (Map.Entry)it.next();
         Runnable ReadingOPs = new Runnable() {
             public void run() {
                 ThreadingforEachFile(pair.getValue());
@@ -228,16 +270,22 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         threads.add(OPsOnEachFile);
     }
     for(int i = 0; i < threads.size(); i++){
-      threads.get(i).join();
+      try{
+        threads.get(i).join();
+      } catch(Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 
   public void ThreadingforEachFile(ArrayList<REQ> reqsOfAFile){
-    ArrayList<Thread> threads = new ArrayList<Thread>; // for join and count number of R
+    ArrayList<Thread> threads = new ArrayList<Thread>(); // for join and count number of R
     String PreviousOP = "";
     for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
-      if(PreviousOP.euqls("")){// there is no op before
+      // System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
+      // System.out.println("ThreadingforEachFile: the file op to take care: "+r.getOP());
+      if(PreviousOP.equals("")){// there is no op before
         if(r.getOP().equals("R")){ // the req want to Read
           Runnable Reading = new Runnable() {
               public void run() {
@@ -250,7 +298,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           PreviousOP = "R";
 
         } else if(r.getOP().equals("W")){ // the req want to Write
-
+          // System.out.println("ThreadingforEachFile: the content for W:   "+r.getContent());
           Runnable Writing = new Runnable() {
               public void run() {
                   ExecW(r);
@@ -264,13 +312,17 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
           // adding record for SYNC
           FilestoSYNC.put(r.getFilename(),r);
         }
-      } else if (PreviousOP.euqls("W")){// there is a W op before
+      } else if (PreviousOP.equals("W")){// there is a W op before
         for(int i = 0; i < threads.size(); i++){
-          threads.get(i).join();
+          try{
+            threads.get(i).join();
+          } catch(Exception e) {
+            e.printStackTrace();
+          }
         }
-        threads = new ArrayList<Thread>;
+        threads = new ArrayList<Thread>();
 
-      } else if (PreviousOP.euqls("R")){// there is a R op running on this file
+      } else if (PreviousOP.equals("R")){// there is a R op running on this file
         if(r.getOP().equals("R")){ // R after R; go for it
           Runnable Reading = new Runnable() {
               public void run() {
@@ -286,9 +338,13 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
 
           // join all R before
           for(int i = 0; i < threads.size(); i++){
-            threads.get(i).join();
+            try{
+              threads.get(i).join();
+            } catch(Exception e) {
+              e.printStackTrace();
+            }
           }
-          threads = new ArrayList<Thread>;
+          threads = new ArrayList<Thread>();
 
           // do the W
           Runnable Writing = new Runnable() {
@@ -309,7 +365,11 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
 
     // take care the last several R or single W
     for(int i = 0; i < threads.size(); i++){
-      threads.get(i).join();
+      try{
+        threads.get(i).join();
+      } catch(Exception e) {
+        e.printStackTrace();
+      }
     }
   }
 
@@ -318,10 +378,10 @@ System.out.println("NACKClient");
     try{
       TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      ClientWork.Client client = new ClientWork.Client(protocol);
       //Try to connect
       transport.open();
-      client.printRet("NACK/filename: "+r.getFilename+s);
+      client.printRet("NACK/filename: "+r.getFilename()+s);
       transport.close();
     } catch (Exception e) {
         e.printStackTrace();
@@ -332,7 +392,7 @@ System.out.println("NACKClient");
   public void ExecR(REQ r){
 System.out.println("ExecR");
     Node s = find_newest(getQuo(NR),r.getFilename());
-    if(s==null{ // cannot find the file or the file is removed
+    if(s==null){ // cannot find the file or the file is removed
       System.out.println("ExecR: This file does not exist!");
       String str = ", does not exist.";
       NACKClient(r, str);
@@ -342,7 +402,7 @@ System.out.println("ExecR");
     try{
       TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+      ServerWork.Client client = new ServerWork.Client(protocol);
       //Try to connect
       transport.open();
       String ret = client.readback(r);
@@ -353,43 +413,57 @@ System.out.println("ExecR");
   }
 
   public void ExecW(REQ r){
+    int NewestVerNum = 0;
 System.out.println("ExecW");
     ArrayList<Node> QW = getQuo(NW);
 System.out.println("QW size: "+ QW.size());
     Node s = find_newest(QW, r.getFilename());
-    if(s==null{
+    if(s==null){
       System.out.println("ExecW: This file does not exist!");
-      String str = ", does not exist.";
-      NACKClient(r, str);
-      return;
+      // String str = ", does not exist.";
+      // NACKClient(r, str);
+      // return;
+      s = QW.get(getRandomServerID(QW));
+      try{
+        TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+        TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+        ServerWork.Client client = new ServerWork.Client(protocol);
+        //Try to connect
+        transport.open();
+        String ret = client.overWriteFile(r,NewestVerNum);
+        ret = client.writeback(r);
+        transport.close();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    } else {
+        try{
+          TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
+          TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+          ServerWork.Client client = new ServerWork.Client(protocol);
+          //Try to connect
+          transport.open();
+          client.writeFile(r);
+          String ret = client.writeback(r);
+          NewestVerNum = client.getVersion(r.getFilename());
+          transport.close();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
     }
-
-    int NewestVerNum = 0;
-
-    try{
-      TTransport  transport = new TSocket(s.getIP(), Integer.parseInt(s.getPort()));
-      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
-      //Try to connect
-      transport.open();
-      String ret = client.writeback(r);
-      NewestVerNum = client.getVersion(r.getFilename());
-      transport.close();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-
     for(int i=0; i<QW.size();i++){
       Node s_ = QW.get(i);
-      if(!s_.getIP()+s_.getPort().equals(s.getIP()+s.getPort())){
+      if(!((s_.getIP()+s_.getPort()).equals(s.getIP()+s.getPort()))){
         try{
           TTransport  transport = new TSocket(s_.getIP(), Integer.parseInt(s_.getPort()));
           TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-          ServerWorkHandler.Client client = new ServerWorkHandler.Client(protocol);
+          ServerWork.Client client = new ServerWork.Client(protocol);
           //Try to connect
           transport.open();
           client.overWriteFile(r, NewestVerNum);
           transport.close();
+        } catch(Exception e) {
+          e.printStackTrace();
         }
       }
     }

@@ -12,6 +12,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.io.*;
 
 
 import org.apache.thrift.server.TServer;
@@ -33,6 +34,22 @@ public class ServerWorkHandler implements ServerWork.Iface
   // HashMap<String, Integer> FileVersion = new HashMap<String, Integer>();
   // HashMap<String, String> FileContent = new HashMap<String, String>();
 
+  public String getPort() {
+		return this.Port;
+	}
+
+	public String getIP() {
+		return this.IP;
+	}
+
+  public String getCoordinatorIP() {
+    return this.CoordinatorIP;
+  }
+
+  public String getCoordinatorPort() {
+    return this.CoordinatorPort;
+  }
+
   ServerWorkHandler(String IP, String Port, String CoordinatorIP, String CoordinatorPort){
     this.IP = IP;
     this.Port = Port;
@@ -41,15 +58,18 @@ public class ServerWorkHandler implements ServerWork.Iface
   }
 
   @Override
-  public void request(REQ r)
+  public void ForRequest(REQ r)
   {
+    System.out.println("ForRequest");
     try{
       TTransport  transport = new TSocket(CoordinatorIP, Integer.parseInt(CoordinatorPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
+      CoordinatorWork.Client client = new CoordinatorWork.Client(protocol);
       //Try to connect
       transport.open();
+      System.out.println("ask coordinator, forwardReq");
       client.forwardReq(r);
+      System.out.println("back from forwardReq");
       transport.close();
 
     } catch(TException e) {
@@ -63,34 +83,37 @@ public class ServerWorkHandler implements ServerWork.Iface
       return -1;
     }
     String[] AList = ALine.split("/");
-    reader.close();
+    // reader.close();
 
    return Integer.parseInt(AList[1]);
   }
 
   @Override
   public String readback(REQ r){
-
-    TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
-    TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-    CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
-    //Try to connect
-    transport.open();
-    client.printRet("ACKR/filename: "+filename+", "+readFile(r.getFilename()));
-    transport.close();
+    try{
+      TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
+      TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
+      ClientWork.Client client = new ClientWork.Client(protocol);
+      //Try to connect
+      transport.open();
+      client.printRet("ACKR/filename: "+r.getFilename()+", "+readFile(r.getFilename()));
+      transport.close();
+    }catch(Exception e){
+      e.printStackTrace();
+    }
     return "ACK";
   }
   @Override
   public String writeback(REQ r){
-    writeFile(r);
+    // writeFile(r);
 
     try{
       TTransport  transport = new TSocket(r.getClientIP(), Integer.parseInt(r.getClientPort()));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));
-      CoordinatorWorkHandler.Client client = new CoordinatorWorkHandler.Client(protocol);
+      ClientWork.Client client = new ClientWork.Client(protocol);
       //Try to connect
       transport.open();
-      client.printRet("ACKW/filename: "+filename+", "+FileVersion.get(filename));
+      client.printRet("ACKW/filename: "+r.getFilename()+", "+getVersion(r.getFilename()));
       transport.close();
     } catch (Exception e){
       e.printStackTrace();
@@ -116,6 +139,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     //     e.printStackTrace();
     //     System.exit(-1);
     // }
+    System.out.println(getVersion(r.getFilename())+1);
     overWriteFile(r, getVersion(r.getFilename())+1);
 
   }
@@ -129,6 +153,7 @@ public class ServerWorkHandler implements ServerWork.Iface
 
     File file = new File(directoryName + "/" + r.getFilename());
     try{
+        file.createNewFile();
         FileWriter fw = new FileWriter(file.getAbsoluteFile());
         BufferedWriter bw = new BufferedWriter(fw);
         bw.write(r.getContent()+"/"+NewestVerNum);
