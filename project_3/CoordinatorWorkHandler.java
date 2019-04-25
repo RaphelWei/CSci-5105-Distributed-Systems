@@ -181,6 +181,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   }
 
   public void SYNC() {
+    System.out.println("The synchronization process starts!");
     Iterator it = FilestoSYNC.entrySet().iterator();
     int NewestVerNum;
     for(Map.Entry<String, REQ> pair: FilestoSYNC.entrySet()){
@@ -210,6 +211,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         e.printStackTrace();
       }
     }
+
+    System.out.println("The synchronization process has been finished!");
 
 
 
@@ -272,7 +275,7 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     }
     for(int i = 0; i < threads.size(); i++){
       try{
-        threads.get(i).join();
+        (thread)threads.get(i).join();
       } catch(Exception e) {
         e.printStackTrace();
       }
