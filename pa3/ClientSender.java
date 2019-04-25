@@ -30,30 +30,31 @@ import org.apache.thrift.transport.TServerTransport;
 public class ClientSender {
   private static String contactServerIP;
   private static String contactServerPort;
-  private static String myPort;
+  private static String filePath;
   private static String receiverPort;
   private static String myIP;
   private static int numOfOps;
   private static long startTime;
+  private static long NumOfOpsSent;
 
-  // Format of the input args: [contactServerIP] [contactServerPort] [myPort] [receiverPort]
+  // Format of the input args: [contactServerIP] [contactServerPort] [receiverPort] [filePath]
   // [contactServerIP] - The IP address of the node the client connect to
   // [contactServerPort] - The port number of the node
-  // [myPort] - The port number of the ClientSender
   // [receiverPort] - The port number of the ClientReceiver
   public static void main(String [] args) {
 
     if(args.length<4){
-      System.out.println("Want 4 arguments!: contactServerIP contactServerPort myPort receiverPort");
+      System.out.println("Want 4 arguments!: contactServerIP contactServerPort receiverPort filePath");
       System.exit(-1);
     }
 
     contactServerIP = args[0];
     contactServerPort = args[1];
-    myPort = args[2];
-    receiverPort = args[3];
+    receiverPort = args[2];
+    filePath = args[3];
+    NumOfOpsSent=0;
 
-    for (;;) {
+    // for (;;) {
       numOfOps = 0;
       startTime = 0;
       try{
@@ -65,46 +66,66 @@ public class ClientSender {
 
       System.out.print("\n\n\n");
       System.out.println("******************************** System starts ************************************************");
-      System.out.println("Please select a mode that you want to test: ");
-      System.out.println("0 - Read-only, only Reads.");
-      System.out.println("1 - Write-only, only Writes.");
-      System.out.println("2 - Read-heavy, where 90% are Reads and 10% are Writes.");
-      System.out.println("3 - Write-heavy, where 10% are Reads and 90% are Writes.");
-      System.out.print("\n\n\n");
+      // System.out.println("Please select a mode that you want to test: ");
+      // System.out.println("0 - Read-only, only Reads.");
+      // System.out.println("1 - Write-only, only Writes.");
+      // System.out.println("2 - Read-heavy, where 90% are Reads and 10% are Writes.");
+      // System.out.println("3 - Write-heavy, where 10% are Reads and 90% are Writes.");
+      // System.out.println("4 - Custom, using your own test cases.");
+      // System.out.print("\n\n\n");
 
-      Scanner scan = new Scanner(System.in);
-      String mode = scan.nextLine();
 
-      switch(mode) {
-        case "0":
-          startTime = System.currentTimeMillis();
-          numOfOps = handleRequest("./read-only.txt");
-          System.out.println("numOfOps: " + numOfOps);
-          connectReceiver(myIP, receiverPort, numOfOps, startTime);
-          break;
-        case "1":
-          startTime = System.currentTimeMillis();
-          numOfOps = handleRequest("./write-only.txt");
-          System.out.println("numOfOps: " + numOfOps);
-          connectReceiver(myIP, receiverPort, numOfOps, startTime);
-          break;
-        case "2":
-          startTime = System.currentTimeMillis();
-          numOfOps = handleRequest("./read-heavy.txt");
-          System.out.println("numOfOps: " + numOfOps);
-          connectReceiver(myIP, receiverPort, numOfOps, startTime);
-          break;
-        case "3":
-          startTime = System.currentTimeMillis();
-          numOfOps = handleRequest("./write-heavy.txt");
-          System.out.println("numOfOps: " + numOfOps);
-          connectReceiver(myIP, receiverPort, numOfOps, startTime);
-          break;
-        default:
-          System.out.println("******************************** System ends ************************************************");
-          System.exit(0);
-      }
-    }
+      startTime = System.currentTimeMillis();
+      numOfOps = handleRequest(filePath);
+      System.out.println("numOfOps: " + numOfOps);
+      connectReceiver(myIP, receiverPort, numOfOps, startTime);
+
+
+
+      // Scanner scan = new Scanner(System.in);
+      // String mode = scan.nextLine();
+
+
+
+  //     switch(mode) {
+  //       case "0":
+  //         startTime = System.currentTimeMillis();
+  //         numOfOps = handleRequest("./read-only.txt");
+  //         System.out.println("numOfOps: " + numOfOps);
+  //         connectReceiver(myIP, receiverPort, numOfOps, startTime);
+  //         break;
+  //       case "1":
+  //         startTime = System.currentTimeMillis();
+  //         numOfOps = handleRequest("./write-only.txt");
+  //         System.out.println("numOfOps: " + numOfOps);
+  //         connectReceiver(myIP, receiverPort, numOfOps, startTime);
+  //         break;
+  //       case "2":
+  //         startTime = System.currentTimeMillis();
+  //         numOfOps = handleRequest("./read-heavy.txt");
+  //         System.out.println("numOfOps: " + numOfOps);
+  //         connectReceiver(myIP, receiverPort, numOfOps, startTime);
+  //         break;
+  //       case "3":
+  //         startTime = System.currentTimeMillis();
+  //         numOfOps = handleRequest("./write-heavy.txt");
+  //         System.out.println("numOfOps: " + numOfOps);
+  //         connectReceiver(myIP, receiverPort, numOfOps, startTime);
+  //         break;
+	// case "4":
+	//   System.out.println("Please input the path of your own test case: ");
+	//   String customPath = scan.nextLhandleRequestine();
+	//   startTime = System.currentTimeMillis();
+  //         numOfOps = handleRequest(customPath);
+	//   System.out.println("numOfOps: " + numOfOps);
+	//   connectReceiver(myIP, receiverPort, numOfOps, startTime);
+  //       default:
+  //         System.out.println("******************************** System ends ************************************************");
+  //         System.exit(0);
+  //     }
+    // }
+    System.out.print("\n\n\n");
+    System.out.println("******************************** System ends ************************************************");
   }
 
 
@@ -145,7 +166,7 @@ public class ClientSender {
   // then it will connect to a given server, this server would later
   // forward the request to the coordinator
   public static void connectServer(String op, String fileName, String content, String clientIP, String clientPort) {
-    REQ request = new REQ(op, fileName, content, clientIP, clientPort);
+    REQ request = new REQ(op, fileName, content, clientIP, clientPort, NumOfOpsSent++);
     try {
       TTransport transport = new TSocket(contactServerIP, Integer.parseInt(contactServerPort));
       TProtocol protocol = new TBinaryProtocol(new TFramedTransport(transport));

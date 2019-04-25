@@ -26,7 +26,7 @@ import java.util.concurrent.*;
 public class ClientWorkHandler implements ClientWork.Iface {
 	private String ip;
 	private String port;
-	private int count = 0;
+	private Integer count = new Integer(0);
 	private int numOfOps = Integer.MAX_VALUE;
 	private long startTime = 0;
 	public ClientWorkHandler(String ip, String port) {
@@ -42,9 +42,10 @@ public class ClientWorkHandler implements ClientWork.Iface {
 		return this.ip;
 	}
   	@Override
-  	public void printRet(String ret){
+  	public synchronized void printRet(String ret){
     	System.out.println(ret);
-			synchronized(count){count++;}
+			// synchronized(count){count++;}
+			count++;
 			System.out.println("count: " + count);
     	if (count == numOfOps) {
       		long endTime = System.currentTimeMillis();
