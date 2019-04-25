@@ -8,7 +8,8 @@ struct REQ {
 	2: string Filename,
 	3: string Content,
 	4: string ClientIP,
-	5: string ClientPort
+	5: string ClientPort,
+  6: i64 NumOfOpsSent
 }
 
 struct Node {
