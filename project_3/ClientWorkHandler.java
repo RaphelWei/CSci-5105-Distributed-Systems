@@ -42,9 +42,10 @@ public class ClientWorkHandler implements ClientWork.Iface {
 		return this.ip;
 	}
   	@Override
-  	public void printRet(String ret){
+  	public synchronized void printRet(String ret){
     	System.out.println(ret);
-			synchronized(count){count++;}
+			// synchronized(count){count++;}
+			count++;
 			System.out.println("count: " + count);
     	if (count == numOfOps) {
       		long endTime = System.currentTimeMillis();

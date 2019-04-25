@@ -120,7 +120,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     }
     return "ACK";
   }
-
+  @Override
   public void writeFile(REQ r){
     // String directoryName = "./"+IP+":_"+Port;
     // File directory = new File(directoryName);
@@ -139,7 +139,7 @@ public class ServerWorkHandler implements ServerWork.Iface
     //     e.printStackTrace();
     //     System.exit(-1);
     // }
-    System.out.println(getVersion(r.getFilename())+1);
+    // System.out.println(getVersion(r.getFilename())+1);
     overWriteFile(r, getVersion(r.getFilename())+1);
 
   }

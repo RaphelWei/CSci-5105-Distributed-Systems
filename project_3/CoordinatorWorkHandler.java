@@ -91,25 +91,25 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
       REQList.add(r);
       reqs.put(r.getFilename(), REQList);
     }
-    for (Map.Entry<String, ArrayList<REQ>> pair: reqs.entrySet()) {
-      System.out.println("reqs file:       "+pair.getKey());
-      System.out.println("reqs size of op: "+pair.getValue().size());
-    }
+    // for (Map.Entry<String, ArrayList<REQ>> pair: reqs.entrySet()) {
+    //   System.out.println("reqs file:       "+pair.getKey());
+    //   System.out.println("reqs size of op: "+pair.getValue().size());
+    // }
 
   }
 
   @Override
   public synchronized void join(Node S){
     ServerList.add(S);
-    for(int i=0; i<ServerList.size();i++){
-      // System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
-    }
+    // for(int i=0; i<ServerList.size();i++){
+    //   // System.out.println("ServerList " + i+ "th item: " +ServerList.get(i).getPort());
+    // }
   }
 
   // size is either NR or NW
   public ArrayList<Node> getQuo(int size){
     // Node[] Quo = new Node[size];
-    System.out.println("getQuo");
+    // System.out.println("getQuo");
     ArrayList<Node> Quo = new ArrayList<Node>();
     boolean[] inds = new boolean[ServerList.size()];
     // System.out.println("ServerList.size():"+ServerList.size());
@@ -261,8 +261,8 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
     ArrayList<Thread> threads = new ArrayList<Thread>();
     // Iterator it = reqsUpToNow.entrySet().iterator();
     for (Map.Entry<String, ArrayList<REQ>> pair: reqsUpToNow.entrySet()) {
-      System.out.println("ExecReqs: the file to take care:      "+pair.getKey());
-      System.out.println("ExecReqs: the # of reqs to take care: "+pair.getValue().size());
+      // System.out.println("ExecReqs: the file to take care:      "+pair.getKey());
+      // System.out.println("ExecReqs: the # of reqs to take care: "+pair.getValue().size());
         // Map.Entry pair = (Map.Entry)it.next();
         Runnable ReadingOPs = new Runnable() {
             public void run() {
@@ -274,8 +274,9 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
         threads.add(OPsOnEachFile);
     }
     for(int i = 0; i < threads.size(); i++){
+      // System.out.println("ExecReqs:"+threads.size());
       try{
-        (thread)threads.get(i).join();
+        threads.get(i).join();
       } catch(Exception e) {
         e.printStackTrace();
       }
@@ -283,9 +284,10 @@ public class CoordinatorWorkHandler implements CoordinatorWork.Iface
   }
 
   public void ThreadingforEachFile(ArrayList<REQ> reqsOfAFile){
-    System.out.println("reqsOfAFile.size(): "+reqsOfAFile.size());
+    // System.out.println("reqsOfAFile.size(): "+reqsOfAFile.size());
     // ArrayList<Thread> threads = new ArrayList<Thread>(); // for join and count number of R
     // String PreviousOP = "";
+    System.out.println("ThreadingforEachFile: "+reqsOfAFile.size());
     for (int j = 0; j < reqsOfAFile.size(); j++) {
       REQ r = reqsOfAFile.get(j);
       // System.out.println("ThreadingforEachFile: the file to take care:    "+r.getFilename());
